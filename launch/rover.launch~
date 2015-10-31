@@ -1,0 +1,3 @@
+<launch>
+	<node name="rover_motor_control" pkg="rover_motor_control" type="rover_motor_control" />
+</launch>

@@ -1,0 +1,85 @@
+#include "ros/ros.h"
+#include "serial/serial.h"
+#include "geometry_msgs/Twist.h"
+#include "iostream"
+
+#define BAUD 9600
+#define PORT "ttyACM0"
+
+#define WHEEL_BASE 1 //meters
+#define WHEEL_DIAMETER .5 //meters
+
+
+bool t = true;
+int main(){
+	try
+	{
+		serial::Serial uno_serial("/dev/ttyACM0", 9600, serial::Timeout::simpleTimeout(1000));
+
+		if(uno_serial.isOpen())
+			while(t)
+				uno_serial.write("50Z");
+		else
+			std::cout << "serial port not open" << std::endl;
+	}
+	catch (serial::IOException e){
+		//std::cout << e << std::endl;
+std::cout << "error" << std::endl;
+	}
+
+
+
+}
+
+
+/*
+class MotorControl
+{
+public:
+	MotorControl();
+private:
+	void cmd_velCallback(const geometry_msgs::Twist &twist_msg);
+	ros::NodeHandle nh_;
+	double left_motor_speed, right_motor_speed;
+	double l_scale_, a_scale_;
+	ros::Subscriber cmd_vel_sub;
+}
+
+MotorControl::MotorControl()
+{
+	
+ros::Subscriber cmd_vel_sub = nh_.subscribe("cmd_vel", 10, cmd_velCallback);
+
+}
+
+void MotorControl::cmd_vel_CallBack(const geometry_msgs::Twist &twist_msg){
+	
+
+
+}
+
+int main(int argc, char** argv){
+	ros::init(argc, argv, "motor_control_rest");
+	MotorControl teleop_rest;
+	serial::Serial uno_serial(PORT, BAUD, serial::Timeout::simpleTimeout(1000));
+
+	ros::Rate loop_rate(10);
+	
+	while(ros::ok())
+	{	
+		uno_serial.write("50Z");
+		
+		double dxy = 0.0;
+		double dth = 0.0;
+		ros::Time current_time = ros::Time::now();
+		double dt;
+		double velxy = dxy / dt;
+		double velth = dth / dt;
+		
+		ros::spinOnce();
+		loop_rate.sleep();
+	}
+
+
+
+}*/
