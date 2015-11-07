@@ -11,37 +11,28 @@
 #define ROBOT_WIDTH 1 //meters
 #define WHEEL_DIAMETER .5 //meters
 
-
 using namespace std;
 
-double vl, vr;
+class RoverMotorControl {
 
-void callback(const geometry_msgs::Twist &twist_aux);
+public:
+	RoverMotorControl();
+	double getvl();
+	double getvr();
 
-int main(int argc, char** argv){
-
+private:
+	void callback(const geometry_msgs::Twist &twist_aux);
+	double vl_;
+	double vr_;
 	int linear_, angular_;
 	double l_scale_, a_scale_;
 	double robot_width_, wheel_diameter_;
 
-	ros::init(argc, argv, "motor_control_rest");
 	ros::NodeHandle nh;
-	ros::Subscriber cmd_vel_sub = nh.subscribe("cmd_vel", 10, &callback);
-	//serial::Serial uno_serial(PORT, BAUD, serial::Timeout::simpleTimeout(1000));
+	ros::Subscriber cmd_vel_sub; 
+};
 
-	ros::Rate loop_rate(10);
-	while(ros::ok())
-	{	
-		//uno_serial.write(vl + "," + vl + "," + vr + "," + vr+ "\n");
-		std::cout << "serial.write  " << vl << "," << vr << "\n";
-		ros::spinOnce();
-		loop_rate.sleep();
-	}
-}
-
-
-void callback(const geometry_msgs::Twist &twist_aux)
-{
+void RoverMotorControl::callback(const geometry_msgs::Twist &twist_aux){
 	geometry_msgs::Twist twist = twist_aux;
 	double vel_x = twist_aux.linear.x;
 	double vel_th = twist_aux.angular.z;
@@ -59,8 +50,42 @@ void callback(const geometry_msgs::Twist &twist_aux)
 		left_vel = vel_x - vel_th * ROBOT_WIDTH / 2.0;
 		right_vel = vel_x + vel_th * ROBOT_WIDTH / 2.0;
 	}
-	vl = left_vel;
-	vr = right_vel;
+	vl_ = left_vel;
+	vr_ = right_vel;
 }
 
+RoverMotorControl::RoverMotorControl()
+{
+	vl_ = 90;
+	vr_ = 90;
 
+	ros::Subscriber cmd_vel_sub = nh.subscribe("cmd_vel", 10, &RoverMotorControl::callback, this);
+
+	
+}
+
+double RoverMotorControl::getvl()
+{
+	return vl_;
+
+}
+
+double RoverMotorControl::getvr()
+{
+	return vr_;
+}
+
+int main(int argc, char** argv){
+	ros::init(argc, argv, "motor_control_rest");
+	RoverMotorControl controller;
+	//serial::Serial uno_serial(PORT, BAUD, //serial::Timeout::simpleTimeout(1000));
+	ros::Rate loop_rate(10);
+	while(ros::ok())
+	{	
+		stringstream ss;
+		ss << controller.getvl() << "," << controller.getvr() << "," << controller.getvl() << "," << controller.getvr() << "\n";
+		//uno_serial.write(ss.str());
+		ros::spinOnce();
+		loop_rate.sleep();
+	}
+}
