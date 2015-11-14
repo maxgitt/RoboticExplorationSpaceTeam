@@ -60,8 +60,6 @@ RoverMotorControl::RoverMotorControl()
 	vr_ = 90;
 
 	ros::Subscriber cmd_vel_sub = nh.subscribe("cmd_vel", 10, &RoverMotorControl::callback, this);
-
-	
 }
 
 double RoverMotorControl::getvl()
@@ -78,7 +76,16 @@ double RoverMotorControl::getvr()
 int main(int argc, char** argv){
 	ros::init(argc, argv, "motor_control_rest");
 	RoverMotorControl controller;
-	//serial::Serial uno_serial(PORT, BAUD, //serial::Timeout::simpleTimeout(1000));
+	bool good = false;
+	while(!good){
+		try {
+			serial::Serial uno_serial(PORT, BAUD, serial::Timeout::simpleTimeout(1000));
+		}
+		catch(serial::IOException e){
+			std::cerr << "ERROR connecting to serial" << std::endl;
+			good = false;
+		}
+	}
 	ros::Rate loop_rate(10);
 	while(ros::ok())
 	{	
