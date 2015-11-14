@@ -4,18 +4,17 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <cstring>
 
 class EncoderControl
 {
 public:
   EncoderControl();
   void update_encoder();
+	serial::Serial * uno_serial;
 
 private:
 	int serial_encoder_BAUD_;
 	std::string serial_encoder_PORT_;
-	serial::Serial * uno_serial;
   ros::NodeHandle nh_;
   ros::Publisher encoder_pub_;
 };
@@ -39,8 +38,7 @@ EncoderControl::EncoderControl():
 
 void EncoderControl::update_encoder()
 {
-	std::string msg_in = "45,60,3,4";//uno_serial.read();
-
+	std::string msg_in = uno_serial->read();
 	std::stringstream ss(msg_in);
 	
 	rover_motor_control::Encoder msg;
@@ -63,18 +61,6 @@ void EncoderControl::update_encoder()
 	ss >> x;
 	msg.front_right_ = x;
 
-	/*getline(ss, line, ',');
-	msg.back_left_ = std::stoi(line);
-
-	getline(ss, line, ',');
-	msg.back_right_ = std::stoi(line);
-
-	getline(ss, line, ',');
-	msg.front_left_ = std::stoi(line);
-
-	getline(ss, line);
-	msg.front_right_ = std::stoi(line);
-	*/
 	encoder_pub_.publish(msg);
 }
 
@@ -88,4 +74,6 @@ int main(int argc, char** argv)
   	ros::spinOnce();
 		loop_rate.sleep();
 	}
+	delete encoder_control.uno_serial;
+	encoder_control.uno_serial = NULL;
 }

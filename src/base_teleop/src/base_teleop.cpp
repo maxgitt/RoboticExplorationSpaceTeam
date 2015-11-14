@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <sensor_msgs/Joy.h>
+#include <rover_motor_control/Encoder.h>
 
 //rover physical properties
 #define ROBOT_WIDTH 1 //meters
@@ -14,18 +15,21 @@ public:
   double get_desired_velocity_right();
   double get_current_velocity_left();
   double get_current_velocity_right();
+	double get_encoder_velocity_left();
+  double get_encoder_velocity_right();
 
   double set_current_velocity_right(double v);
   double set_current_velocity_left(double v);
 
   ros::Publisher vel_pub_;
   ros::Subscriber joy_sub_;
+	ros::Subscriber encoder_sub_;
 
 private:
   void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
+	void encoderCallback(const rover_motor_control::Encoder::ConstPtr& encoder);
   void rampControl(double t1, double t2, double c1, double c2);
 
-  
   
   ros::NodeHandle nh_;
 
@@ -34,6 +38,9 @@ private:
 
   double current_velocity_left;
   double current_velocity_right;
+
+	double encoder_velocity_left;
+  double encoder_velocity_right;
 
   int right_;
   int left_;
@@ -52,15 +59,18 @@ TeleopREST::TeleopREST():
   nh_.param("scale_angular", a_scale_, a_scale_);
   nh_.param("scale_linear", l_scale_, l_scale_);
 
-  	desired_velocity_left = 90;
+  desired_velocity_left = 90;
 	desired_velocity_right = 90;
   
 	current_velocity_left = 90;
 	current_velocity_right = 90;
 
+	encoder_velocity_left = 90;
+  encoder_velocity_right = 90;
 
   vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 1);
   joy_sub_ = nh_.subscribe<sensor_msgs::Joy>("joy", 10,&TeleopREST::joyCallback, this);
+	encoder_sub_ = nh_.subscribe<rover_motor_control::Encoder>("encoder_values", 10, &TeleopREST::encoderCallback, this);
 }
 
 double TeleopREST::get_desired_velocity_left()
@@ -83,6 +93,16 @@ double TeleopREST::get_current_velocity_right()
 	return current_velocity_right;
 }
 
+double TeleopREST::get_encoder_velocity_left()
+{
+	return encoder_velocity_left;
+}
+
+double TeleopREST::get_encoder_velocity_right()
+{
+	return encoder_velocity_right;
+}
+
 double TeleopREST::set_current_velocity_left(double v)
 {
 	current_velocity_left = v;
@@ -97,7 +117,12 @@ void TeleopREST::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {  
   desired_velocity_left = joy->axes[left_];
   desired_velocity_right = joy->axes[right_];
+}
 
+void TeleopREST::encoderCallback(const rover_motor_control::Encoder::ConstPtr& encoder)
+{  
+	encoder_velocity_left = ((encoder->back_left_) + (encoder->front_left_)) / 2;
+  encoder_velocity_right = ((encoder->back_right_) + (encoder->front_right_)) / 2;
 }
 
 int main(int argc, char** argv)
@@ -106,8 +131,8 @@ int main(int argc, char** argv)
   TeleopREST teleop_rest;
 
   //c1 and c2 must come from encoders, c1 is the left motor's current speed, c2 is the right motor's current speed
-    teleop_rest.set_current_velocity_left(90);  //From encoders
-    teleop_rest.set_current_velocity_right(90);  //From encoders
+    teleop_rest.set_current_velocity_left(teleop_rest.get_encoder_velocity_left());  //From encoders
+    teleop_rest.set_current_velocity_right(teleop_rest.get_encoder_velocity_right());  //From encoders
     
     double error1 = teleop_rest.get_desired_velocity_left() - teleop_rest.get_current_velocity_left();
     double error2 = teleop_rest.get_desired_velocity_right() - teleop_rest.get_current_velocity_right();
@@ -116,10 +141,10 @@ int main(int argc, char** argv)
 
     geometry_msgs::Twist vel;
 
-	//must add stuff before the loop too
+	ros::Rate loop_rate(10);
 	while(ros::ok())
 	{
-	    	teleop_rest.set_current_velocity_left(teleop_rest.get_current_velocity_left() + (gain * error1));
+	  teleop_rest.set_current_velocity_left(teleop_rest.get_current_velocity_left() + (gain * error1));
 		teleop_rest.set_current_velocity_right(teleop_rest.get_current_velocity_right() + (gain * error2));
 		error1 = teleop_rest.get_desired_velocity_left() - teleop_rest.get_current_velocity_left();
 		error2 = teleop_rest.get_desired_velocity_right() - teleop_rest.get_current_velocity_right();
@@ -140,6 +165,7 @@ int main(int argc, char** argv)
 			vel.linear.x = teleop_rest.get_desired_velocity_right() - vel.angular.z * ROBOT_WIDTH / 2.0;
 		}	
 		teleop_rest.vel_pub_.publish(vel);
-		ros::spin();
+		ros::spinOnce();
+		loop_rate.sleep();
 	}
 } 
