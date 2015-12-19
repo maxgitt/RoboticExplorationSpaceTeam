@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <sstream>
 #include <iostream>
+#include <ctype.h>
 
 #define ROVER_BEACON_FWD_DEFAULT 23
 #define ROVER_BEACON_AFT_DEFAULT 23
@@ -16,8 +17,7 @@
 #define SIEVE_OFFSET_LEFT_DEFAULT -1
 #define SIEVE_OFFSET_RIGHT_DEFAULT 1
 
-
-#define SAMPLE_SIZE 30
+#define SAMPLE_SIZE 10
 
 class RoverOdometry
 {
@@ -27,13 +27,14 @@ public:
     void computeTransform();
     void publishOdometry();
     void updatePosePosition();
-    void sampleDriver();
-    std::string drivercmd_ = "sudo '/home/pascualy/catkin_ws/decawave_driver/dwm1000driver'";
+    void sampleDriver(char *);
+    std::string drivercmd_ = "script -c \"sudo '/home/pascualy/catkin_ws/decawave_driver/dwm1000driver'";
+    std::string drivercmd_postfix_ = "\" /dev/null"; 
+    
     FILE* driverprogram_;
     ros::Time current_time_;
     ros::Time last_time_;
 private:
-
     ros::NodeHandle nh_;
     
     //Beacon ids
@@ -44,14 +45,12 @@ private:
     
     int sieve_offset_left_;
     int sieve_offset_right_;
-    
-    
+      
     //Beacon distance
     double rover_fwd_sieve_left_  = 0;
     double rover_fwd_sieve_right_ = 0;
     double rover_aft_sieve_left_  = 0;
     double rover_aft_sieve_right_ = 0;
-    
     
     //Odometry variables
     double x_prev_ = 0;
@@ -65,8 +64,6 @@ private:
     double vx_ = 0;
     double vy_ = 0;
     double vth_ = 0;
-    
-
     
     ros::Publisher odom_pub_;
     tf::TransformBroadcaster odom_broadcaster_;
@@ -92,9 +89,9 @@ sieve_offset_right_(SIEVE_OFFSET_RIGHT_DEFAULT)
     nh_.param("beacon_driver_cmd", drivercmd_, drivercmd_);
 
     std::stringstream ss(drivercmd_);
-    std::cout << drivercmd_ << std::endl;
-    drivercmd_ = drivercmd_ + " " + std::to_string(sieve_beacon_id_left_) + "," + std::to_string(sieve_beacon_id_right_);
 
+    drivercmd_ = drivercmd_ + " " + std::to_string(sieve_beacon_id_left_) + "," + std::to_string(sieve_beacon_id_right_) + drivercmd_postfix_;
+    std::cout << drivercmd_ << std::endl;
     odom_pub_     = nh_.advertise<nav_msgs::Odometry>("odom", 50);
     current_time_ = ros::Time::now();
     last_time_    = ros::Time::now();
@@ -106,19 +103,81 @@ void RoverOdometry::calculateOffset(){
     
 }
 
-void RoverOdometry::sampleDriver(){
-    char data[128];
-    char sample[128];
+void RoverOdometry::updatePosePosition(){
+    x_prev_  = x_;
+    y_prev_  = y_;
+    th_prev_ = th_;
     
-    if (fgets(data, 128, driverprogram_)!= NULL){
-	strcpy(sample, data);
-    }
+    //distance between the sieve beacons
+    double x_fwd = pow(sieve_offset_left_,2) - pow(sieve_offset_left_,2) + pow(rover_fwd_sieve_right_, 2) - pow(rover_fwd_sieve_left_, 2);
+    x_fwd /= (-2*(-sieve_offset_left_ + sieve_offset_right_));
+    double y_fwd = sqrt(abs(pow(rover_fwd_sieve_left_, 2) - pow(x_fwd - sieve_offset_left_, 2)));
+    
+    double x_aft = pow(sieve_offset_left_,2) - pow(sieve_offset_left_,2) + pow(rover_aft_sieve_right_, 2) - pow(rover_aft_sieve_left_, 2);
+    x_aft /= (-2*(-sieve_offset_left_ + sieve_offset_right_));
+    double y_aft = sqrt(abs(pow(rover_aft_sieve_left_, 2) - pow(x_aft - sieve_offset_left_, 2)));
+    
+    
+    //calulate position
+    x_ = (x_fwd + x_aft)/2;
+    y_ = (y_fwd + y_aft)/2;
+    
+    //calculate pose
+    
+    x_fwd -= x_aft;
+    y_fwd -= y_aft;
+    
+    th_ = 180 - acos(x_fwd/y_fwd);
+    
+    vx_  = (x_ - x_prev_)/(current_time_.toSec() - last_time_.toSec());
+    vy_  = (y_ - y_prev_)/(current_time_.toSec() - last_time_.toSec());
+    vth_ = (th_ - th_prev_)/(current_time_.toSec() - last_time_.toSec());
+}
+            
+void RoverOdometry::computeTransform(){
+                //since all odometry is 6DOF we'll need a quaternion created from yaw
+                odom_quat_ = tf::createQuaternionMsgFromYaw(th_);
+                //send the transform
+                odom_trans.header.stamp = current_time_;
+                odom_trans.header.frame_id = "odom";
+                odom_trans.child_frame_id = "base_link";
+                
+                odom_trans.transform.translation.x = x_;
+                odom_trans.transform.translation.y = y_;
+                odom_trans.transform.translation.z = 0.0;
+                odom_trans.transform.rotation = odom_quat_;
+                
+                odom_broadcaster_.sendTransform(odom_trans);
+}
+            
+void RoverOdometry::publishOdometry(){
+                nav_msgs::Odometry odom;
+                
+                odom.header.stamp    = current_time_;
+                odom.header.frame_id = "odom";
+                
+                //set the position
+                odom.pose.pose.position.x = x_;
+                odom.pose.pose.position.y = y_;
+                odom.pose.pose.position.z = 0.0;
+                odom.pose.pose.orientation = odom_quat_;
+                
+                //set the velocity
+                odom.child_frame_id        = "base_link";
+                odom.twist.twist.linear.x  = vx_;
+                odom.twist.twist.linear.y  = vy_;
+                odom.twist.twist.angular.z = vth_;
+                
+                //publish the message
+                odom_pub_.publish(odom);
+            }
+
+void RoverOdometry::sampleDriver(char * sample){
     //Take in values for determing which beacons are communicating
-    int rover_id = atoi(strtok(sample,","));
-    int sieve_id = atoi(strtok(NULL,","));
-    double distance = atoi(strtok(NULL, ""));
-    std::cout << rover_id << " " << sieve_id << " " << distance << std::endl;
-    //Update the distances from rover to sieve beacons
+    int rover_id = rover_beacon_id_fwd_;
+    int sieve_id = atoi(strtok(sample,","));
+    double distance = atof(strtok(NULL, ""));
+
     if (rover_id == rover_beacon_id_fwd_ && sieve_id == sieve_beacon_id_left_){
         if( rover_fwd_sieve_left_ == 0 ) {
             distance = SAMPLE_SIZE*distance;
@@ -148,131 +207,33 @@ void RoverOdometry::sampleDriver(){
             rover_aft_sieve_right_ -= rover_aft_sieve_right_/SAMPLE_SIZE;
             rover_aft_sieve_right_ += distance/SAMPLE_SIZE;
     }
-}
-
-void RoverOdometry::updatePosePosition(){
-    x_prev_  = x_;
-    y_prev_  = y_;
-    th_prev_ = th_;
-    
-    
-    //distance between the sieve beacons
-    
-    
-    double x_fwd = pow(sieve_offset_left_,2) - pow(sieve_offset_left_,2) + pow(rover_fwd_sieve_right_, 2) - pow(rover_fwd_sieve_left_, 2);
-    x_fwd /= (-2*(-sieve_offset_left_ + sieve_offset_right_));
-    double y_fwd = sqrt(abs(pow(rover_fwd_sieve_left_, 2) - pow(x_fwd - sieve_offset_left_, 2)));
-    
-    
-    double x_aft = pow(sieve_offset_left_,2) - pow(sieve_offset_left_,2) + pow(rover_aft_sieve_right_, 2) - pow(rover_aft_sieve_left_, 2);
-    x_aft /= (-2*(-sieve_offset_left_ + sieve_offset_right_));
-    double y_aft = sqrt(abs(pow(rover_aft_sieve_left_, 2) - pow(x_aft - sieve_offset_left_, 2)));
-    
-    
-    //calulate position
-    x_ = (x_fwd + x_aft)/2;
-    y_ = (y_fwd + y_aft)/2;
-    
-    //calculate pose
-    
-    x_fwd -= x_aft;
-    y_fwd -= y_aft;
-    
-    th_ = 180 - acos(x_fwd/y_fwd);
-    
-    vx_  = (x_ - x_prev_)/(current_time_.toSec() - last_time_.toSec());
-    vy_  = (y_ - y_prev_)/(current_time_.toSec() - last_time_.toSec());
-    vth_ = (th_ - th_prev_)/(current_time_.toSec() - last_time_.toSec());
-            }
-            
-            void RoverOdometry::computeTransform(){
-                //since all odometry is 6DOF we'll need a quaternion created from yaw
-                odom_quat_ = tf::createQuaternionMsgFromYaw(th_);
-                //send the transform
-                
-                
-                odom_trans.header.stamp = current_time_;
-                odom_trans.header.frame_id = "odom";
-                odom_trans.child_frame_id = "base_link";
-                
-                odom_trans.transform.translation.x = x_;
-                odom_trans.transform.translation.y = y_;
-                odom_trans.transform.translation.z = 0.0;
-                odom_trans.transform.rotation = odom_quat_;
-                
-                odom_broadcaster_.sendTransform(odom_trans);
-            }
-            
-            void RoverOdometry::publishOdometry(){
-                nav_msgs::Odometry odom;
-                
-                odom.header.stamp    = current_time_;
-                odom.header.frame_id = "odom";
-                
-                //set the position
-                odom.pose.pose.position.x = x_;
-                odom.pose.pose.position.y = y_;
-                odom.pose.pose.position.z = 0.0;
-                odom.pose.pose.orientation = odom_quat_;
-                
-                //set the velocity
-                odom.child_frame_id        = "base_link";
-                odom.twist.twist.linear.x  = vx_;
-                odom.twist.twist.linear.y  = vy_;
-                odom.twist.twist.angular.z = vth_;
-                
-                //publish the message
-                odom_pub_.publish(odom);
-            }
-            
+}     
 int main(int argc, char** argv)
     {
         ros::init(argc, argv, "rover_odometry");
         RoverOdometry rover_odometry;
-        
+        int counter = 0;
         ros::Rate r(1.0);
         while(ros::ok()){
             rover_odometry.driverprogram_ = popen(rover_odometry.drivercmd_.c_str(), "r");
-	    char data[128];
+	    char data[128]= "23,23,12.009";
             while(!feof(rover_odometry.driverprogram_)){
-		if(fgets(data,128,rover_odometry.driverprogram_) != NULL){
-			std::cout << data << std::endl;		
+		if(fgets(data, sizeof data,rover_odometry.driverprogram_) != NULL){
+			char* tmp = data;
+			while(!isdigit((int)*tmp)) ++tmp;
+			if(tmp[0] != 's' && (counter % 10) == 0)
+				rover_odometry.sampleDriver(tmp);
+				rover_odometry.updatePosePosition();
+                    		// get time message from ROS system
+                    		rover_odometry.current_time_ = ros::Time::now();
+                    		//first, we'll publish the transform over tf
+                    		rover_odometry.computeTransform();
+                    		//next, we'll publish the odometry message over ROS
+                    		rover_odometry.publishOdometry();
+			if(counter % 400 == 0 && counter != 0) return 0;		
 		}
+		++counter;
 	    }
-
-
-	    //setvbuf(rover_odometry.driverprogram_, NULL,_IOLBF,0);
-            //break;   
-            //read sensor data from standard out
-            if (!rover_odometry.driverprogram_){
-                std::cerr << "ERROR: could not run beacon driver" << std::endl;
-            }
-            else {
-                //rover_odometry.calculateOffset();
-                
-                while (!feof(rover_odometry.driverprogram_)) {
-                    // check for incoming messages
-                    ros::spinOnce();               
-                    
-                    //take sample from beacon driver and update running averages
-                    //rover_odometry.sampleDriver();
-                    
-                    //update pose(heading) and position(x y distance from sieve)
-                    //rover_odometry.updatePosePosition();
-                    
-                    // get time message from ROS system
-                    //rover_odometry.current_time_ = ros::Time::now();
-                    
-                    //first, we'll publish the transform over tf
-                    //rover_odometry.computeTransform();
-                    
-                    //next, we'll publish the odometry message over ROS
-                    //rover_odometry.publishOdometry();
-                    
-                    rover_odometry.last_time_ = rover_odometry.current_time_;
-                    r.sleep();
-                }
-            }
         }
     }
             
