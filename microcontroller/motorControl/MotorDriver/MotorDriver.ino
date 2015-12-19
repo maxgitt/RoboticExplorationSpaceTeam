@@ -29,8 +29,9 @@ void loop()
 
 void update(unsigned int &L, unsigned int &R, unsigned int &LF, unsigned int &RF)
 {
-  L = Serial.readStringUntil(',').toInt();
+  //motors are opposite of each other so multiply one side by negative one
+  L = 180 - Serial.readStringUntil(',').toInt();
   R = Serial.readStringUntil(',').toInt();
-  LF = Serial.readStringUntil(',').toInt();
+  LF = 180 - Serial.readStringUntil(',').toInt();
   RF = Serial.readStringUntil('\n').toInt();
 }
