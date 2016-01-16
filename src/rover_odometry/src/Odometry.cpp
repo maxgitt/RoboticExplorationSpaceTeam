@@ -1,4 +1,4 @@
-#include <Odometry/Odometry.h>
+#include "Odometry.h"
 #include <sstream>
 #include <string>
 #include <stdio.h>
@@ -36,6 +36,7 @@ Odometry::Odometry(){ //default ctor
         RoverBeacon::sieveBeaconData newSieveBeaconData(temp);
         std::pair<int, RoverBeacon::sieveBeaconData> beaconToBeAdded(stoi(id),newSieveBeaconData);
         sieveBeacons.push_back(beaconToBeAdded);
+        numSieveBeacons = sieveBeacons.size();
     }
 
     //Initialize rover beacons	
@@ -51,6 +52,9 @@ Odometry::Odometry(){ //default ctor
         getline(offset, y);
         std::pair<double,double> roverOffset(stod(x),stod(y));
         RoverBeacons.push_back(RoverBeacon(id, sieveBeacons, roverOffset));
+    }
+    for(auto i : RoverBeacons){
+        RoverBeaconsMap[i.getId()]= &i;
     }
     //open a new process: the driver that reads the beacon data
     std::string prefix; //command that would run the
@@ -143,6 +147,7 @@ Odometry::getPose(){
 void 
 Odometry::updateOdometry(){
 std::cout << "Reached update odometry!" << std::endl;
+    updateBeaconReadings();
     //update the previous values before calculating the new values
     x_prev = x;
     y_prev = y;
@@ -160,7 +165,6 @@ std::cout << "Reached update odometry!" << std::endl;
     
     //calculate the new theta
     double theta = 0;
-    int numPairs;
     std::vector<RoverBeacon>::iterator firstBeacon = RoverBeacons.begin();
     std::vector<RoverBeacon>::iterator secondBeacon = ++RoverBeacons.begin();
     while (secondBeacon != RoverBeacons.end()) {
@@ -177,7 +181,6 @@ std::cout << "Reached update odometry!" << std::endl;
                 theta_temp += 90;
             }
             theta += theta_temp;
-            ++numPairs;
 	   ++secondBeacon;
         }
         ++firstBeacon;
@@ -185,7 +188,7 @@ std::cout << "Reached update odometry!" << std::endl;
 	++secondBeacon;
     }
     
-    theta /= numPairs;
+    theta /= (RoverBeacons.size() * numSieveBeacons);
     
    std::cout << "x position: " << x << std::endl << "y position: " << std::endl << "Angle: " << theta << std::endl; 
 }
@@ -196,3 +199,42 @@ double Odometry::calcAngle(std::pair<double,double> firstPos, std::pair<double,d
     double y_val = firstPos.second - secondPos.second;
     return atan2(y_val,x_val);
 }
+
+//will store the values as a pair of id,reading for each beacon and update the readings. We will need to add a timeout!!
+void Odometry::updateBeaconReadings() {
+    unordered_set< std::string> currentReadings;
+    std::string data;
+    std::string beaconID;
+    std::string sieveID;
+    double distance;
+    std::stringstream inputStream;
+    while (currentReadings.size() < (numSieveBeacons * RoverBeacons.size()) and !feof(driverData)) {
+        char buffer[128];
+        if(fgets(buffer, sizeof buffer, driverData) != NULL)) {
+            data = buffer; //convert to string
+            inputStream.str(data);
+            getline(inputStream, beaconID, ',');
+            getline(inputStream, sieveID, ',');
+            getline(inputStream, distance);
+            RoverBeaconsMap[beaconID]->updateReading(stoi(sieveID), distance);
+            currentReadings.insert(beaconID + sieveID);
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
