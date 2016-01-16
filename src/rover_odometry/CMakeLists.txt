@@ -11,12 +11,23 @@ else()
 	message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
-find_package(catkin REQUIRED
-    COMPONENTS
-        cmake_modules
-        roscpp
-	tf
-	nav_msgs
+find_package(catkin REQUIRED COMPONENTS
+    cmake_modules
+    roscpp
+    tf
+    nav_msgs
+    message_generation
+
+)
+
+add_message_files(
+  FILES
+  Encoder.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
 )
 
 
