@@ -38,6 +38,7 @@ private:
     FILE* driverData;
 
     std::vector <RoverBeacon> RoverBeacons;
+    std::unordered_map <std::string, const RoverBeacon*> RoverBeaconsMap; //used to efficiently update the readings
 
 	std::pair<double,double> roverPosition;
 	double roverPose; //degrees rotation with respect to positive x-axis
@@ -70,7 +71,8 @@ private:
     double vy = 0;
     double vth = 0;
 
-     
+    
+    int numSieveBeacons = 0;
 
 };
 
