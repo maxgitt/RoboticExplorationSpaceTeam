@@ -1,21 +1,22 @@
 /* 
  * File:   Odometry.h
- * Author: pascualy
- *
+ * Authors: pascualy
+ *          Kishore B. Rao  Cell: 508-873-5384
+ *          Bhairav Metha
  * Description: a class that detects and intializes beacon pairs. calculates pose and position.
  *
  * Created on December 21st, 2015, 4:20 PM
  */
-#include <ros/ros.h>
-#include <tf/transform_broadcaster.h>
-#include <nav_msgs/Odometry.h>
+//#include <ros/ros.h>
+//#include <tf/transform_broadcaster.h>
+//#include <nav_msgs/Odometry.h>
 #include <string>
 #include <vector>
 #include <sstream>
 #include "Beacon.h"
 
-#ifndef BEACON_H
-#define BEACON_H
+#ifndef ODOMETRY_H
+#define ODOMETRY_H
 
 
 
@@ -26,9 +27,8 @@
 class Odometry{
 public:
 	Odometry();
-	void detectBeacons(); //detects the beacons which are connected to the computer
-	void initializeBeacons();
-	void calculateBiases();
+	void detectRoverBeacons(); //detects the beacons which are connected to the computer
+    void loadBiases();
 	std::pair<double,double> getPosition();
 	double getPose();
 	void updateOdometry();
@@ -36,16 +36,17 @@ public:
 private:
     FILE* driverData;
 
-
-	std::vector<Beacon::Beacon> roverBeacons;
-	std::vector<int, std::pair<double,double>> sieveBeacons;
+    std::vector <RoverBeacon> RoverBeacons;
 
 	std::pair<double,double> roverPosition;
 	double roverPose; //degrees rotation with respect to positive x-axis
+    
+    //helper function to calculate theta...takes in two pairs of doubles representing xy positons of two points and determines angle
+    double calcAngle(std::pair<double,double> firstPos, std::pair<double,double> secondPos);
 
 
-    ros::NodeHandle nh;
-	ros::Publisher odom_pub;
+    ros::NodeHandle nh; //creates node handle
+	ros::Publisher odom_pub; //will allow this class to publish data for other nodes to listen to
 
     tf::TransformBroadcaster odom_broadcaster;
     geometry_msgs::Quaternion odom_quat;
