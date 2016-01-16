@@ -16,8 +16,8 @@ int main(int argc, char * argv[]){
 	//ros::Publisher odometryPublisher = nh.advertise<nav_msgs::Odometry>("odom",50);
 	Odometry rover_odometry;
 
-	//rover_odometry.detectRoverBeacons(); //detects the beacons which are connected to the computer
-	//rover_odometry.loadBiases();
+	rover_odometry.detectRoverBeacons(); //detects the beacons which are connected to the computer
+	///rover_odometry.loadBiases();
 
 	ros::Rate r(1.0);
    	while(ros::ok()){

@@ -22,6 +22,7 @@
 
 #define DRIVER_PREFIX "script -c \"sudo '/home/pascualy/catkin_ws/decawave_driver/dwm1000driver'"
 #define DRIVER_POSTFIX "\" /dev/null"
+#define NODENAMESPACE 
 
 
 class Odometry{
@@ -69,7 +70,10 @@ private:
     double vy = 0;
     double vth = 0;
 
+     
+
 };
 
+const static std::string param_key = "/rover_odometry/";
 
 #endif

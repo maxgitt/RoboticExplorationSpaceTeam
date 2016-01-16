@@ -22,7 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
-  Encoder.msg
+  Odometry.msg
 )
 
 generate_messages(

@@ -20,8 +20,9 @@
 
 
 
-#define DRIVER_PREFIX "script -c \"sudo '/home/pascualy/catkin_ws/decawave_driver/dwm1000driver'"
-#define DRIVER_POSTFIX "\" /dev/null"
+#define DRIVER_PREFIX "sudo '/home/pascualy/catkin_ws/decawave_driver/dwm1000driver'"
+#define DRIVER_POSTFIX ""
+#define NODENAMESPACE 
 
 
 class Odometry{
@@ -48,7 +49,7 @@ private:
     ros::NodeHandle nh; //creates node handle
 	ros::Publisher odom_pub; //will allow this class to publish data for other nodes to listen to
 
-    tf::TransformBroadcaster odom_broadcaster;
+    //tf::TransformBroadcaster odom_broadcaster;
     geometry_msgs::Quaternion odom_quat;
     geometry_msgs::TransformStamped odom_trans;
 
@@ -69,7 +70,10 @@ private:
     double vy = 0;
     double vth = 0;
 
+     
+
 };
 
+const static std::string param_key = "/rover_odometry/";
 
 #endif

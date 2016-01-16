@@ -11,12 +11,23 @@ else()
 	message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
-find_package(catkin REQUIRED
-    COMPONENTS
-        cmake_modules
-        roscpp
-	tf
-	nav_msgs
+find_package(catkin REQUIRED COMPONENTS
+    cmake_modules
+    roscpp
+    tf
+    nav_msgs
+    message_generation
+
+)
+
+add_message_files(
+  FILES
+  Odometry.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
 )
 
 
@@ -54,6 +65,7 @@ target_link_libraries(rover_odometry
 
 
 target_link_libraries(rover_odometry Beacon Odometry)
+target_link_libraries(Odometry Beacon)
 #set_target_properties(rover_odometry PROPERTIES OUTPUT_NAME Beacon)
 
 #target_link_libraries(rover_odometry Odometry)
