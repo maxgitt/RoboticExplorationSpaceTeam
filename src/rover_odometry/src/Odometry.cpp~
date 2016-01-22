@@ -235,7 +235,6 @@ void Odometry::updateBeaconReadings() {
             getline(inputStream, beaconID, ',');
             getline(inputStream, sieveID, ',');
             getline(inputStream, distance_);
-		std::cout << "Distance: " << distance_ << std::endl;
 	    distance = stod(distance_);
             RoverBeaconsMap[beaconID]->updateReading(stoi(sieveID), distance);
             currentReadings.insert(beaconID + sieveID);
