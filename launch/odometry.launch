@@ -1,0 +1,23 @@
+<launch>
+	<!-- ROSCORE automatically started if not already running -->
+	<!-- rover odometry node -->
+	<node name="rover_odometry" pkg="rover_odometry" type="rover_odometry" output="screen">
+		<param name="sieve_beacon_ids" type="string" value="13,24" />
+		<param name="x13" type = "string" value="1,0" />
+		<param name="x24" type = "string" value="-1,0" />
+		<param name="rover_beacon_ids" type="string" value="48c36259,c3e3c227"	/>
+		<param name="r48c36259" type="string" value="1,1" />
+		<!--<param name="r35a79eb" type = "string" value = "1,-1" />-->
+		<!--<param name="r997ca3f0" type = "string" value = "-1,1" />-->
+		<param name="rc3e3c227" type = "string" value = "-1,-1"/>
+		<param name="driver_prefix" type="string" value="script -c \ &quot;sudo &apos;/home/pascualy/catkin_ws/decawave_driver/dwm1000driver&apos;" />
+		<param name="48c36259_24" type = "string" value="4.00" />
+		<!--<param name="35a79eb,24" type = "string" value=""/>-->
+		<!--<param name="997ca3f0,24" type = "string" value=-->
+		<param name="c3e3c227_24" type = "string" value="7.00" />
+		<param name="48c36259_13" type = "string" value="2.78"/>
+		<!--<param name="35a79eb,13" type = "string" value=-->
+		<!--<param name="997ca3f0,13" type = "string" value=-->
+		<param name="c3e3c227_13" type = "string" value="5.68" />
+	</node>
+</launch>
