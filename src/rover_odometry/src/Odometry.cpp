@@ -59,11 +59,12 @@ Odometry::Odometry(){ //default ctor
     //open a new process: the driver that reads the beacon data
     std::string prefix; //command that would run the
     nh.param(param_key + "driver_prefix", prefix, driverDefaultVal);
-    std::string driver_cmd = prefix + " " + sieve_beacon_ids.str() + DRIVER_POSTFIX;
+    std::string driver_cmd = "sudo '/home/pascualy/catkin_ws/decawave_driver/dwm1000driver' 23,24";//prefix + " " + sieve_beacon_ids.str() + DRIVER_POSTFIX;
     
     //std::string driver_cmd = "script -c \"sudo '/home/pascualy/catkin_ws/decawave_driver/dwm1000driver' 13,24 \" /dev/null";
     //popen opens a new process (essentially runs a command on the terminal)
     driverData = popen(driver_cmd.c_str(), "r"); //returns a pointer to an open stream and sets it up with read only permission
+if(setvbuf (driverData, NULL, _IOLBF, 0)) std::cout << "buffer not set";
 
     //initialize odom message with 50 message queue
     odom_pub     = nh.advertise<nav_msgs::Odometry>("odom", 50);
@@ -88,7 +89,7 @@ Odometry::detectRoverBeacons(){
 	if (!feof(driverData)) {
 		fgets(buffer, sizeof buffer, driverData); //consume useless first line
 
-}
+	}
 	 
     while(!feof(driverData)){
         /*if (time(NULL) > timeoutTime) {
@@ -213,32 +214,39 @@ void Odometry::updateBeaconReadings() {
     std::string distance_;
     double distance;
     std::stringstream inputStream;
-	std::cout << "About to get data from the file again" << std::endl;
-	nh.param(param_key + "sieve_beacon_ids", sieve_ids, sieve_ids);
+
+
 	//open a new process: the driver that reads the beacon data
-    std::string prefix; //command that would run the
-    nh.param(param_key + "driver_prefix", prefix, driverDefaultVal);
-    std::string driver_cmd = prefix + " " + sieve_ids + DRIVER_POSTFIX;
-    
+
     //std::string driver_cmd = "script -c \"sudo '/home/pascualy/catkin_ws/decawave_driver/dwm1000driver' 13,24 \" /dev/null";
     //popen opens a new process (essentially runs a command on the terminal)
     //driverData = popen(driver_cmd.c_str(), "r"); //returns a pointer to an open stream and sets it up with read only permission
-	char buffer[128];
+    	char buffer[128];
+    	if(feof(driverData)) exit(1);
+	std::cout << "About to get data from the file again" << std::endl;
+
+	for(int i = 0; i < 100; ++i){
 		fgets(buffer, sizeof buffer, driverData); //consume useless first line
-    fflush(driverData);
+		data = buffer; //convert to string
+		inputStream.str(data);
+		std::cout <<  inputStream.str() << std::endl;
+	}
+    //fflush(driverData);
+
+
     while (currentReadings.size() < (numSieveBeacons * RoverBeacons.size()) and !feof(driverData)) {
         
         if(fgets(buffer, sizeof buffer, driverData) != NULL) {
             data = buffer; //convert to string
             inputStream.str(data);
-		std::cout << inputStream.str() << std::endl;
+	    std::cout << "reading" << inputStream.str() << std::endl;
             getline(inputStream, beaconID, ',');
             getline(inputStream, sieveID, ',');
             getline(inputStream, distance_);
-		std::cout << "Distance: " << distance_ << std::endl;
-	    distance = stod(distance_);
-            RoverBeaconsMap[beaconID]->updateReading(stoi(sieveID), distance);
-            currentReadings.insert(beaconID + sieveID);
+	    std::cout << "Distance: " << distance_ << std::endl;
+	    //distance = stod(distance_);
+            //RoverBeaconsMap[beaconID]->updateReading(stoi(sieveID), distance);
+            //currentReadings.insert(beaconID + sieveID);
         }	
     }
 }
