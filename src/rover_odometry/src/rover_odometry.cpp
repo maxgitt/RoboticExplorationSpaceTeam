@@ -8,20 +8,26 @@
 #include <Beacon/Beacon.h>
 #include <Odometry/Odometry.h>
 
+using std::string;
+using std::cin; using std::cout; using std::endl;
 
 int main(int argc, char * argv[]){
 	//Initialize ROS node and Odometry Publisher
 	ros::init(argc, argv, "rover_odometry");
 	ros::NodeHandle nh;
-	//ros::Publisher odometryPublisher = nh.advertise<nav_msgs::Odometry>("odom",50);
+	ros::Publisher odometryPublisher = 
+		nh.advertise<nav_msgs::Odometry>("odom",50);
 	Odometry rover_odometry;
 
-	//rover_odometry.detectRoverBeacons(); //detects the beacons which are connected to the computer
+	//detects the beacons which are connected to the computer
+	//rover_odometry.detectRoverBeacons(); 
 	//rover_odometry.loadBiases();
-
+	string temp;
 	ros::Rate r(1.0);
    	while(ros::ok()){
+		//getline(cin,temp);
+		//cout << temp << "\n";
    		rover_odometry.updateOdometry();
-   		r.sleep();
+   		//r.sleep();
    	}
 }
