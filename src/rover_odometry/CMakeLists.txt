@@ -14,15 +14,13 @@ endif()
 find_package(catkin REQUIRED COMPONENTS
     cmake_modules
     roscpp
-    tf
-    nav_msgs
     message_generation
 
 )
 
 add_message_files(
   FILES
-  Odometry.msg
+  Odom.msg
 )
 
 generate_messages(
