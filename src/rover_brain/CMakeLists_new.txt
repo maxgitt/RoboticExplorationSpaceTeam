@@ -20,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_service_files(
   FILES
-  auto_togg.srv
+  auto_togg.msg
 )
 
 generate_messages(
@@ -40,18 +40,21 @@ include_directories(
 )
 
 # move_base
-add_library(RoverBrain
-  src/RoverBrain.cpp
+add_library(rover_brain
+  src/rover_brain.cpp
+)
+
+add_library(Beacon
+  src/Beacon.cpp
 )
 
 
-
-add_executable(rover_brain
+add_executable(rover_brain_node
   src/rover_brain.cpp
 )
 
 
-target_link_libraries(rover_brain
+target_link_libraries(rover_brain_node
     ${Boost_LIBRARIES}
     ${catkin_LIBRARIES}
     )
@@ -59,8 +62,8 @@ target_link_libraries(rover_brain
 #add_dependencies(move_base geometry_msgs_gencpp)
 
 
-target_link_libraries(rover_brain RoverBrain)
-#target_link_libraries(rover_brain)
+target_link_libraries(rover_brain_node rover_brain)
+target_link_libraries(rover_brain)
 #set_target_properties(rover_odometry PROPERTIES OUTPUT_NAME Beacon)
 
 #target_link_libraries(rover_odometry Odometry)
@@ -68,8 +71,8 @@ target_link_libraries(rover_brain RoverBrain)
 
 install(
     TARGETS
-	RoverBrain
         rover_brain
+        rover_brain_node
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

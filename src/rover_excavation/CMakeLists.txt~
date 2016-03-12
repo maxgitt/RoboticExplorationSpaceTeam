@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(rover_brain)
+project(rover_excavation)
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
@@ -15,12 +15,11 @@ find_package(catkin REQUIRED COMPONENTS
     cmake_modules
     roscpp
     message_generation
-    std_msgs
 )
 
 add_service_files(
   FILES
-  auto_togg.srv
+  finish_dig.srv
 )
 
 generate_messages(
@@ -40,18 +39,17 @@ include_directories(
 )
 
 # move_base
-add_library(RoverBrain
-  src/RoverBrain.cpp
+add_library(dig_control
+  src/dig_control.cpp
 )
 
 
-
-add_executable(rover_brain
-  src/rover_brain.cpp
+add_executable(rover_excavation
+  src/rover_excavation.cpp
 )
 
 
-target_link_libraries(rover_brain
+target_link_libraries(rover_excavation
     ${Boost_LIBRARIES}
     ${catkin_LIBRARIES}
     )
@@ -59,8 +57,8 @@ target_link_libraries(rover_brain
 #add_dependencies(move_base geometry_msgs_gencpp)
 
 
-target_link_libraries(rover_brain RoverBrain)
-#target_link_libraries(rover_brain)
+target_link_libraries(rover_excavation dig_control)
+#target_link_libraries(rover_excavation)
 #set_target_properties(rover_odometry PROPERTIES OUTPUT_NAME Beacon)
 
 #target_link_libraries(rover_odometry Odometry)
@@ -68,8 +66,8 @@ target_link_libraries(rover_brain RoverBrain)
 
 install(
     TARGETS
-	RoverBrain
-        rover_brain
+	dig_control
+        rover_excavation
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

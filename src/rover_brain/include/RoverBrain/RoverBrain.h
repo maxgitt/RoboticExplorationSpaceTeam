@@ -1,0 +1,25 @@
+#include <ros/ros.h>
+//#include "rover_pathfinding/global_goal.h"
+//#include "rover_excavation/finish_dig.h"
+#include "rover_brain/auto_togg.h"
+
+class RoverBrain{
+public:
+	//Constructor for Rover Brain class 
+	RoverBrain();
+	void MovetoExcavate();
+	void Excavate();
+	void MovetoSieve();
+	void Deposit();
+	//Called when autonomy_toggle service gets called:
+	bool AutonomyToggle(rover_brain::auto_togg::Request &req, rover_brain::auto_togg::Response &res);
+
+private:
+	ros::NodeHandle nh;
+
+	ros::ServiceClient move;
+	ros::ServiceClient excavate;
+
+	ros::ServiceServer autonomy_toggle;
+	bool auto_off_flag;
+};
