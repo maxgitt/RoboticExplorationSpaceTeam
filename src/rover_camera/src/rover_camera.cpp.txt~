@@ -1,0 +1,53 @@
+#include <ros/ros.h>
+#include <image_transport/image_transport.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <cv_bridge/cv_bridge.h>
+
+class CameraAccess{
+private:
+	bool listening = false;
+	ros::NodeHandle nh;
+
+public:
+	CameraAccess();
+	~CameraAccess(){}
+	void getFrame();
+	void imageCallback(const sensor_msgs::ImageConstPtr& msg);
+	image_transport::ImageTransport it;
+	image_transport::Subscriber sub; 
+};
+
+void CameraAccess::CameraAccess(): it(nh) {
+	ros::init(argc, argv, "image_listener");
+	cv::namedWindow("view");
+	cv::startWindowThread();
+	sub = it.subscribe("rgb/image_raw", 1, &CameraAccess::imageCallback, this);
+}
+
+void CameraAccess::imageCallback(const sensor_msgs::ImageConstPtr& msg)
+{
+	try
+	{
+		cv::imshow("view", cv_bridge::toCvShare(msg, "bgr8")->image);
+		cv::waitKey(30);
+	}
+	catch (cv_bridge::Exception& e)
+	{
+		ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
+	}
+	listening = false;
+}
+
+sensor_msgs::Image&
+sensor_msgs::Image CameraAccess::getFrame(){
+	listening = true;
+	while(listening){}
+	return image;
+}
+
+
+int main(){
+	CameraAccess camera;
+	camera.getFrame();
+	return 0;
+}
