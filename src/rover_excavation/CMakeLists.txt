@@ -15,11 +15,17 @@ find_package(catkin REQUIRED COMPONENTS
     cmake_modules
     roscpp
     message_generation
+	serial
 )
 
 add_service_files(
   FILES
   finish_dig.srv
+)
+
+add_message_files(
+  FILES
+  dig_progress.msg
 )
 
 generate_messages(
