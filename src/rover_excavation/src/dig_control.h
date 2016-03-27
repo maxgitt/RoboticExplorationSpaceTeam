@@ -5,6 +5,7 @@
 #include <time.h>
 #include <ros/ros.h>
 #include "rover_excavation/finish_dig.h"
+#include "excavationSerial.h"
 
 using namespace std;
 
@@ -21,10 +22,19 @@ public:
     float calcPID(float P, float I, float D);
     float getWeight();
     void waitForServiceRequest();
-    void digSubRoutine();
+    bool digSubRoutine();
     void sendEndOfService();
+	bool dumpSubRoutine();
 
 private:
+    ros::NodeHandle nh;
+    ros::Publisher dig_pub;
+
+	SerialComm linearActuator; 
+
+	int timeout = 40; //TODO set timout seconds
+	float target_weight = 10; //set through testing TODO
+
     vector <float> e;         //error vector
     int i;                  //index
 

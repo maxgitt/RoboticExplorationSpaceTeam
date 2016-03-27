@@ -25,6 +25,11 @@ public:
     void sendEndOfService();
 
 private:
+    ros::NodeHandle nh;
+    ros::Publisher dig_pub;
+
+	float target_weight = 10; //set through testing TODO
+
     vector <float> e;         //error vector
     int i;                  //index
 
