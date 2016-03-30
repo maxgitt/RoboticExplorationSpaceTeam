@@ -14,13 +14,15 @@ endif()
 find_package(catkin REQUIRED COMPONENTS
     cmake_modules
     roscpp
+    rospy
     message_generation
-
+    tf
+    nav_msgs
 )
 
 add_message_files(
   FILES
-  Odom.msg
+  Odometry.msg
 )
 
 generate_messages(
@@ -60,7 +62,8 @@ target_link_libraries(rover_odometry
     )
 #add_dependencies(move_base move_base_gencfg)
 #add_dependencies(move_base geometry_msgs_gencpp)
-
+#target_link_libraries(rover_odometry opt/ros/jade/lib/python2.7/dist-packages/tf/_tf.so opt/ros/jade/lib/python2.7/dist-packages/tf2_py/_tf2.so)
+#target_link_libraries(rover_odometry opt/ros/jade/lib/libtf.so opt/ros/jade/lib/libtf2.so)
 
 target_link_libraries(rover_odometry Beacon Odometry)
 target_link_libraries(Odometry Beacon)
