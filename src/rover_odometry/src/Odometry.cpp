@@ -19,25 +19,34 @@ using std::vector;
 using std::string;
 
 Odometry::Odometry(){
-	string sieve_ids;
+	string sieve_ids = "13,24,23"; //default sieve IDs
 	string id; //individual sieve beacon
-	string offsetValues ="-100,-100"; //x,y offset of the sieve beacon
-	string beacon_ids = "48c36259,35a79eb,997ca3f0,c3e3c227";
+	string offsetValues ="-100,-100"; //default x,y offset of the sieve beacon
+	string beacon_ids = "48c36259,35a79eb,997ca3f0,c3e3c227"; //default rover IDs
 	vector< std::pair<int, RoverBeacon::sieveBeaconData> > sieveBeacons;
 
 	//Get list of sieve beacons addresses from parameter server
 	nh.param(param_key + "sieve_beacon_ids", sieve_ids, sieve_ids);
-	//parse each address and check parameter server for offset.
-	// parameter server must be loaded
-	//with xy offsets for each address of form x + <id>
-	cout << "Read the following sieve_ids from the parameter server: " <<
+	/* Parse each address and check parameter server for offset.
+     * parameter server must be loaded
+     * with xy offsets for each address of form x + <id> */
+    
+#if DEBUG
+	cerr << "Read the following sieve_ids from the parameter server: " <<
 							 sieve_ids << endl;
+#endif
+    
 	istringstream sieve_beacon_ids(sieve_ids);
 	while(getline(sieve_beacon_ids, id, ',')){
 		string offsetparam = "x" + id;
 		nh.param(param_key + offsetparam, offsetValues, offsetValues);
-		cout << "The offset for sieve_id: " << id << 
+        
+#if DEBUG
+		cerr << "The offset for sieve_id: " << id <<
 					" is " << offsetValues << endl;
+#endif
+        
+        //Obtain x and y offsets for all the sieve becaons
 		istringstream offset(offsetValues);
 		string x = "-1";
 		string y = "-1";
@@ -53,16 +62,24 @@ Odometry::Odometry(){
 	numSieveBeacons = sieveBeacons.size();
 
 
-	//Initialize rover beacons	
+	//Initialize rover beacons
 	nh.param(param_key + "rover_beacon_ids", beacon_ids, beacon_ids);
-	cout << "Loading the following rover beacon ids from the parameter server: " << beacon_ids << endl;
+    
+#if DEBUG
+	cerr << "Loading the following rover beacon ids from the parameter server: " << beacon_ids << endl;
+#endif
+    
 	istringstream rover_beacon_ids(beacon_ids);
 	while (getline(rover_beacon_ids, id, ',')) {
 		//this is how rover offset is stored in the parameter server
 		string offsetparam = param_key + "r" + id;
 		nh.param(offsetparam, offsetValues, offsetValues);
-		cout << "Rover beacon: " << id << " has offsets " <<
+        
+#if DEBUG
+		cerr << "Rover beacon: " << id << " has offsets " <<
 							 offsetValues;
+#endif
+        
 		istringstream offset(offsetValues);
 		string x = "-1";
 		string y = "-1";
@@ -82,74 +99,140 @@ Odometry::Odometry(){
 	//odom_broadcaster = _odom_broadcaster;
 	current_time = ros::Time::now();
 	last_time    = ros::Time::now();
+    
 }
 
 // comes in as
 // roverid, sieveId, distance
 void
 Odometry::detectRoverBeacons(){
-	int numRoverBeacons = RoverBeacons.size();
-	unordered_set<string> uniqueRoverBeacons;
-	cout << "Detecting the beacons that are connected to the rover\n" 
-		<< "We expect " << RoverBeacons.size() << " Beacons!" << endl;
-	string data;
-	string roverBeaconID;
-	stringstream fileData;
-	//keep looking for the expected number of rover beacons until 
-	//timeout at which point throw an exception
-	getline(cin,data);
-	while(getline(cin, data)){
-		//cout << "Current line of data being read is " << data << endl;
-		fileData.str(data);
-		getline(fileData, roverBeaconID, ',');
-		uniqueRoverBeacons.insert(roverBeaconID);
-		if (uniqueRoverBeacons.size() == numRoverBeacons) {
-			cout << "Identified all the beacons!" << endl;
- 			return;
-		}
-	}
+#if DEBUG
+	cerr << "Detecting the beacons that are connected to the rover\n"
+		<< "We expect " << RoverBeacons.size() << " Beacons!\n"
+    << "We also expect " << numSieveBeacons << " sieve beacons." << endl;
+    
+#endif 
+    
+    unordered_set<std::string> currentReadings;
+    string beaconID, sieveID, distance_;
+    getline(cin,beaocnID); //consume useless first line
+    timer.recordTime();
+    double startTime = timer.getTime();
+    double time_difference = 0;
+    while (currentReadings.size() < (numSieveBeacons * RoverBeacons.size()) && time_difference < 30 ) {
+        stringstream inputStream;
+        string line;
+        getline(cin,line);
+        
+#if FULLDEBUG
+        cerr << "Current Line being read: " << line << endl;
+        
+#endif
+        
+        inputStream.str(line);
+        getline(inputStream, beaconID, ',');
+        getline(inputStream, sieveID, ',');
+        getline(inputStream, distance_);
+        currentReadings.insert(beaconID + sieveID);
+        timer.recordTime();
+        time_difference = timer.getTime() - startTime;
+    }
+    
+    if (time_difference >= 30) {
+        cerr << "Exiting, could not get readings from all beacons in a 30 second interval\n";
+        exit(1);
+    }
+    
+    cout << "Detected all " << numSieveBeacons * RoverBeacons.size() << " combinations"
+    << " of rover and sieve beacons!\n";
+
 }
 
 void 
 Odometry::loadBiases(){
-	std::string defaultValue = "ERROR";
-	// In server, it should be designated "roverId sieveId" with value bias
-	//cout << "Just reaching loadBiases()" << endl;
-	for (auto rbeaconIt = RoverBeacons.begin(); 
-			rbeaconIt != RoverBeacons.end(); ++rbeaconIt) {
-		unordered_map<int, RoverBeacon::sieveBeaconData> 				currBeaconReadings = rbeaconIt->getBeaconReadings();
-		for (auto it = currBeaconReadings.begin();
-			it != currBeaconReadings.end(); ++it) {
-			string currBias = "-1";
-			string currBiasPair = rbeaconIt->getId() + 
-					"_" + std::to_string(it->first);
+    cout << "Please place the rover (center of the rover) at position (0,4) with the center of the sieve being (0,0)\n";
+    timer.recordTime();
+    double startTime = timer.getTime();
+    time_difference = 0;
+    
+    while (time_difference < 480) { //wait for 8 minutes
+        timer.recordTime();
+        time_difference = timer.getTime() - startTIme;
+    }
+    
+    auto roverBeaconIt = roverBeacons.begin();
+    auto endRoverBeaconIt = roverBeacons.end();
+    for (; roverBeaconIt != endRoverBeaconIt; ++roverBeaconIt) {
+        double rBeaconXPos = roverBeaconIt->getOffset().first;
+        double rBeaconYPos = roverBeaconIt->getOffset().second + 4;
+        unordered_map<int, sieveBeaconData>::iterator sieveIt = roverBeaconIt->beaconReadings.begin();
+        unordered_map<int, sieveBeaconData>::iterator endSieveIt = roverBeaconIt->beaconReadings.end();
+        for (; sieveIt != endSieveIt; ++sieveIt) {
+            double sieveXPos = sieveIt->second.offset.first();
+            double sieveYPos = sieveIt->second.offset.second();
+            double expectedValue = sqrt(pow((rBeaconXPos - sieveXPos),2) + pow((rBeaconYPos - sieveBeaconYPos), 2));
+            int currSieveID = sieveIt->first;
+            bool found = false;
+            while (!found) {
+                stringstream inputStream;
+                string line;
+                getline(cin,line);
+                string beaconID, sieveID, distance_;
+#if FULLDEBUG
+                cerr << "Current Line being read: " << line << endl;
+                
+#endif
+                inputStream.str(line);
+                getline(inputStream, beaconID, ',');
+                getline(inputStream, sieveID, ',');
+                getline(inputStream, distance_);
+                if (beaconID == roverBeaconIt->id) {
+                    if (stoi(sieveID) == currSieveID) {
+                        found = true;
+                        double actualValue = stod(distance_);
+                        double bias = actualValue - expectedValue;
+#if DEBUG
+                        cerr << "Loading a bias of " << bias << " between rover beacon " << beaconID
+                        << " and sieve beacon " << sieveID << " because the real distance is "
+                        << expectedValue << " and the sensors produce a value of " << actualValue << endl;
+#endif
+                        
+                        roverBeaconIt->updateBias(currSieveID, bias);
+                    }
+                }
 
+            }
+    }
+        
+        
+    cout << "All rover beacons have been fully configured. We are ready to output beautiful odometry data!\n";
+    
+#if DEBUG
+        cout << "Here is all of the beacon data\n";
+        roverBeaconIt = roverBeacons.begin();
+        endRoverBeaconIt = roverBeacons.end();
+        for (; roverBeaconIt != endRoverBeaconIt; ++roverBeaconIt) {
+            sieveIt = roverBeaconIt->beaconReadings.begin();
+            endSieveIt = roverBeaconIt->beaconReadings.end();
+            cout << roverBeaconIt->id << " has an offset of " << roverBeaconIt->offset.first << ","
+            << roverBeaconIt->offset.second << " and the following associated sieve beacons\n";
+            for (; sieveIt != endSieveIt; ++sieveIt) {
+                cout << "     " << sieveIt->first << " has an offset of " << sieveIt->offset.first << ","
+                << sieveIt->offset.second << " and a bias of " << sieveIt->bias << "\n";
+            }
+        }
+#endif
 
-			//nh.param(param_key + currBiasPair, currBias);
-
-			if      (currBiasPair == "48c36259_24")
-				currBias = "4.41";  //tested to be between 2.8-3.3
-			else if (currBiasPair == "48c36259_13")
-				currBias = "3.83"; //tested to be between 2.2 and 2.8
-			else if (currBiasPair == "c3e3c227_24")
-				currBias = "7.33"; //tested to be between 4.9 and 5.57
-			else if (currBiasPair == "c3e3c227_13")
-				currBias = "6.8"; //ested to be between 4.8 and 5.4
-			else if (currBiasPair == "c3e3c227_23") 
-				currBias = "-5.48";
-			else if (currBiasPair == "48c36259_23")
-				currBias = "-8.55";
-			rbeaconIt->updateBias(it->first, stod(currBias));
-		}
-	}	
 }
 
 
 void 
 Odometry::updateOdometry(){
 
-
+#if FULLDEBUG
 	cout << "Reached update odometry!" << endl;
+#endif 
+    
 	updateBeaconReadings();
 
 	if(first){
@@ -166,14 +249,11 @@ Odometry::updateOdometry(){
 	double y_val = 0;
 	//take position readings from each rover beacon and then average them
 	for( auto it = RoverBeacons.begin(); it != RoverBeacons.end(); ++it) {
-		cout << "Adding a x yalue of " << 
-			((*it).getPosition()).first + (*it).getOffset().first;
-		x_val += ((*it).getPosition()).first + (*it).getOffset().first;
-		
-		cout << "Adding a y value of " << ((*it).getPosition()).second +
-					 (*it).getOffset().second << std::endl;
-		
-		y_val += ((*it).getPosition()).second + (*it).getOffset().second;
+		x_val += ((*it).getPosition()).first - (*it).getOffset().first;
+		y_val += ((*it).getPosition()).second - (*it).getOffset().second;
+#if DEBUG
+        cerr << it->id << " predicts that the center of the rover is at " << x_val "," << y_val << "\n";
+#endif
 	}
 	x = x_val/RoverBeacons.size();
 	y = y_val/RoverBeacons.size();
@@ -190,7 +270,6 @@ Odometry::updateOdometry(){
 			theta_temp -= calcAngle(firstBeacon->getOffset(),
 					 secondBeacon->getOffset());
 			theta_temp += 90;
-			cout << "theta temp is : " << theta_temp << endl;
 			theta += theta_temp;
 			++secondBeacon;
 		}
@@ -200,8 +279,13 @@ Odometry::updateOdometry(){
 	}
 	//change when we add more rover beacons
 	theta /= 1;
+    
+#if DEBUG
+    cout << endl << endl;
 	std::cout << "x position: " << x << std::endl << "y position: " << y << std::endl << "Angle: " << theta << std::endl; 
-
+    cout << endl << endl;
+#endif
+    
 	if(first){
 		// if it is the first message we are just initializing
 		// we cannot calculate valid odometry with only one point
@@ -269,13 +353,17 @@ double Odometry::calcAngle(pair<double,double> firstPos, pair<double,double> sec
 	double x_val = firstPos.first - secondPos.first;
 	double y_val = firstPos.second - secondPos.second;
 	double return_angle = atan2(y_val,x_val) * (180/3.14159);
-	cout << "RETURNING: " << return_angle << endl;
 	return return_angle;
 }
 
 //will store the values as a pair of id,reading for each beacon and update the readings. We will need to add a timeout!!
 void Odometry::updateBeaconReadings() {
+    
+#if FULLDEBUG
 	cout << "Going to update the Beacon Readings\n";
+#endif
+    
+    
 	unordered_set<std::string> currentReadings;
 	string beaconID, sieveID, distance_;
 	double distance = 5;
@@ -290,7 +378,11 @@ void Odometry::updateBeaconReadings() {
 		getline(inputStream, beaconID, ',');
 		getline(inputStream, sieveID, ',');
 		getline(inputStream, distance_);
-
+#if FULLDEBUG
+        cout << "Current line of data being read is: " << line << endl;
+#endif
+        
+        
 		try {
 			distance = stod(distance_);
 			RoverBeacon* temp = RoverBeaconsMap[beaconID];

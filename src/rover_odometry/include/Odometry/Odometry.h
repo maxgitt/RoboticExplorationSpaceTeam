@@ -27,9 +27,11 @@
 class Odometry{
 public:
 	Odometry();
-	//detects the beacons which are connected to the computer
-	void detectRoverBeacons(); 
+	//Detect the number of rover beacons connected to the rover
+	void detectRoverBeacons();
+    //Load the biases either manually or through the parameter server
 	void loadBiases();
+    //Return the 
 	std::pair<double,double> getPosition();
 	double getPose();
 	void updateOdometry();
@@ -81,6 +83,8 @@ private:
 	int numSieveBeacons = 0;
 	std::deque <double> runningTotal;
 	int currCount;
+    
+    Timer timer;
 };
 
 const static std::string param_key = "/rover_odometry/";

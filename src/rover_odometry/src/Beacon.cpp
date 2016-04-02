@@ -13,16 +13,19 @@ using std::string;
 
 RoverBeacon::RoverBeacon(string _id) : id(_id){}
 
-RoverBeacon::RoverBeacon(string _id, 
-	vector<pair<int, sieveBeaconData>> sieveBeacons, 
-		pair<double,double> roverOffset) : id(_id), 
-			offset(roverOffset) {
+RoverBeacon::RoverBeacon(string _id, vector<pair<int, sieveBeaconData>> sieveBeacons,
+		pair<double,double> roverOffset) : id(_id), offset(roverOffset) {
 	// loop through the sieveBeacon vector to intialize the rover
 	// beacon;
-	for(auto beacon: sieveBeacons){ 
+    
+    
+    vector<pair<int, sieveBeaconData>>::iterator it = sieveBeacons.begin();
+    vector<pair<int, sieveBeaconData>>::iterator endIt = sieveBeacons.end();
+                
+    for(; it != endIt; ++it){
 		// store the id of the sieve beacon 
 		// and its associated data
-		beaconReadings.insert({beacon.first, beacon.second}); 
+		beaconReadings.insert({it->first, it->second});
 	}
 }
 
@@ -50,11 +53,8 @@ RoverBeacon::getBias(int _id){
 
 void 
 RoverBeacon::updateBias(int _id, double _bias){
-	//std::cout << "enter updateBias with following value: " << 
-						//bias_ << endl;
 	beaconIterator = beaconReadings.find(_id);
 	beaconIterator->second.bias = _bias;
-	//std::cout << "leaving updateBias" << endl;
 }
 
 pair<double,double>
@@ -78,11 +78,23 @@ RoverBeacon::updatePosition(){
 	vector<pair<double,double>> offsets;
 	auto it = beaconReadings.begin();
 	auto endIt = beaconReadings.end();
+    
+#if DEBUG
+    cerr << "Calculating the position of rover beacon " << this->id << " with an old position of"
+    << position.first << "," << position.second << " and the following readings\n";
+#endif
 	for (; it != endIt; ++it) {
+#if DEBUG
+        cerr << "        " << "Sieve Beacon " << it->first ": " << it->second.reading << "\n";
+#endif
 		readings.push_back(it->second.reading);
 		offsets.push_back(it->second.offset);
 	}
+
 	position = steepest_descent(readings,offsets, position);
+#if DEBUG
+    cerr < "The position of " << this->id << " is " << position.first << "," << position.second << "\n";
+#endif
 
 }
 
