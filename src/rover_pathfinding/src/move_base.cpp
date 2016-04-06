@@ -9,11 +9,11 @@ MoveBase::setup(int argc, char ** argv){
 	pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 1000);   
 	srv = nh.advertiseService("pathfinding", MoveBase::pathcb, this);
 	// Construct PID objects
-	linearx = new PID(&linearx_set, &linearx_in, &linearx_out, 
+	linearx = new PID(&currx, &linearx_out, &destx, 
 						Kp, Ki, Kd, AUTOMATIC);
-	lineary = new PID(&lineary_set, &lineary_in, &lineary_out, 
+	lineary = new PID(&curry, &lineary_out, &desty,
 						Kp, Ki, Kd, AUTOMATIC);
-	angularz = new PID(&angularz_set, &angularz_in, &angularz_out, 
+	angularz = new PID(&currth, &angularz_out, &destth,
 						Kp, Ki, Kd, AUTOMATIC);
 }
 
@@ -120,23 +120,15 @@ void
 MoveBase::move_to(double _destx, double _desty){
 	destx = _destx;
 	desty = _desty;
+	
+	double dx = (destx - currx);
+	double dy = (desty - curry);
+	destth  = atan2(dx, dy) * 180 / 3.141592;
+	
 	ros::Rate loop_rate(10);
 	// While we are not within 2 decimals places of
 	// the destination continue running
 	while(ros::ok() && !at_dest()){
-		// Calculate the normal vector that points in the
-		// direction of the destination
-		double dx = (destx - currx);
-		double dy = (desty - curry);
-		double normy = dy / sqrt(pow(dx,2) + pow(dy,2));
-		double normx = dx / sqrt(pow(dx,2) + pow(dy,2));
-		
-		// normx/normy is a the proportion of movement required in
-		// respective direction
-		linearx_set = normx * scale_factor;
-		lineary_set = normy * scale_factor;
-		angularz_set  = atan2(normx, normy) * 180 / 3.141592;
-
 		// Compute new output
 		linearx->Compute();
 		lineary->Compute();
