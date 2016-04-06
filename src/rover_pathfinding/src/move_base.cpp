@@ -128,8 +128,8 @@ MoveBase::move_to(double _destx, double _desty){
 		// direction of the destination
 		double dx = (destx - currx);
 		double dy = (desty - curry);
-		double normy = dx / sqrt(pow(dx,2) + pow(dy,2));
-		double normx = dy / sqrt(pow(dx,2) + pow(dy,2));
+		double normy = dy / sqrt(pow(dx,2) + pow(dy,2));
+		double normx = dx / sqrt(pow(dx,2) + pow(dy,2));
 		
 		// normx/normy is a the proportion of movement required in
 		// respective direction
