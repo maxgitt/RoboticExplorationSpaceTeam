@@ -1,29 +1,27 @@
-#include "ros/ros.h"
-#include "serial/serial.h"
-#include "excavation_control/Excavation.h"
 #include <iostream>
 #include <cmath>
+#include <sstream>
+
+#include "ros/ros.h"
+#include "serial/serial.h"
+#include "rover_controls/Excavation.h"
+
 
 using namespace std;
 
-struct 
-ActuatorSignal {
-	int wire_one = 0;
-	int wire_two = 0;
-};
-
-class ExcavationControl {
+class ExcavatorControl {
 
 public:
-	ExcavationControl() = delete;
-	ExcavationControl(serial::Serial *);
+	ExcavatorControl() = delete;
+	ExcavatorControl(serial::Serial *);
 	serial::Serial * uno_serial;
-private:
 	void transmit();
-	void callback(const rover_actuator_control::Actuator &);
+private:
 
-	ActuatorSignal left_actuator  = {0,0};
-	ActuatorSignal right_actuator = {0,0};
+	void callback(const rover_controls::Excavation &);
+
+	int left_actuator		  = 0;
+	int right_actuator		  = 0;
 	double excavator_speed 		  = 90;
 
 	ros::NodeHandle nh;
@@ -31,44 +29,21 @@ private:
 };
 
 //Initialize serial port 
-ExcavationControl::ExcavationControl(serial::Serial * _uno_serial)  {
+ExcavatorControl::ExcavatorControl(serial::Serial * _uno_serial)  {
 	uno_serial = _uno_serial;
-	cmd_excv_sub = nh.subscribe("/cmd_excv", 10, &ExcavationControl::callback, this);
+	cmd_excv_sub = nh.subscribe("/cmd_excv", 10, &ExcavatorControl::callback, this);
 }
 
 void
-ExcavationControl::callback(const excavation_control::Excavation &excv_msg){
-	int templ  = excv_msg.left_actuator;
-	int tempr  = excv_msg.right_actutor;
-
-	if( templ == 0 ){
-		left_actuator.wire_one = 0;
-		left_actuator.wire_two = 0;
-	} else if ( templ == 1 ) {
-		left_actuator.wire_one = 0;
-		left_actuator.wire_two = 1;
-	} else if ( templ == -1 ) {
-		left_actuator.wire_one = 1;
-		left_actuator.wire_two = 0;
-	} 
-
-	if( tempr == 0 ){
-		right_actuator.wire_one = 0;
-		right_actuator.wire_two = 0;
-	} else if ( tempr == 1 ) {
-		right_actuator.wire_one = 0;
-		right_actuator.wire_two = 1;
-	} else if ( tempr == -1 ) {
-		right_actuator.wire_one = 1;
-		right_actuator.wire_two = 0;
-	} 
-
+ExcavatorControl::callback(const rover_controls::Excavation &excv_msg){
+	left_actuator  = excv_msg.left_actuator;
+	right_actuator = excv_msg.right_actuator;
 	excavator_speed = excv_msg.excavator_speed * 90 + 90;
 }
 
 void
-ExcavationControl::Transmit() {
+ExcavatorControl::transmit() {
 	stringstream ss; 
-	ss << left_actuator << "," << right_actuator << "," << excavator_speed << "\n";
-	controller.uno_serial->write(ss.str());
+	ss << '1' << ',' << left_actuator << "," << right_actuator << "," << excavator_speed << "\n";
+	uno_serial->write(ss.str());
 }
