@@ -1,7 +1,10 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <sensor_msgs/Joy.h>
+#include "rover_controls/Excavation.h"
+#include <iostream>
 
+using std::cout; using std::endl;
 //rover physical properties
 #define ROBOT_WIDTH 1 //meters
 #define WHEEL_DIAMETER .5 //meters
@@ -13,38 +16,71 @@ public:
 
 private:
   void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
-  
+  bool is_disabled();
   ros::NodeHandle nh_;
 
-  int right_;
-  int left_;
-  double l_scale_, a_scale_;
-  ros::Publisher vel_pub_;
-  ros::Subscriber joy_sub_;
+  int right;
+  int left;
+  double l_scale, a_scale;
+  ros::Publisher vel_pub;
+  ros::Publisher excv_pub;
+  ros::Subscriber joy_sub;
   
+  // 0 - disable
+  // 1 - 
+  bool disabled = true;
+
+  int act_tog = 0;
+  int actL   = 0;
+  int actR   = 0;
 };
 
 
 TeleopREST::TeleopREST():
-  right_(1),
-  left_(4)
+  right(1),
+  left(4)
 {
 
-  nh_.param("axis_right", right_, right_);
-  nh_.param("axis_left", left_, left_);
-  nh_.param("scale_angular", a_scale_, a_scale_);
-  nh_.param("scale_linear", l_scale_, l_scale_);
+  nh_.param("axis_right", right, right);
+  nh_.param("axis_left", left, left);
+  nh_.param("scale_angular", a_scale, a_scale);
+  nh_.param("scale_linear", l_scale, l_scale);
 
+  excv_pub = nh_.advertise<rover_controls::Excavation>("cmd_excv", 1);
+  vel_pub = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 1);
+  joy_sub = nh_.subscribe<sensor_msgs::Joy>("joy", 10,&TeleopREST::joyCallback, this);
 
-  vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 1);
-  joy_sub_ = nh_.subscribe<sensor_msgs::Joy>("joy", 10,&TeleopREST::joyCallback, this);
+}
+
+bool TeleopREST::is_disabled(){
+	if(disabled == true) {
+  		geometry_msgs::Twist vel;
+		vel.linear.x = 0;
+		vel.angular.z = 0;
+		vel_pub.publish(vel);
+		//add disabling code for excavation  
+		act_tog = 0;
+  		rover_controls::Excavation excv;
+		excv.left_actuator  = 0;
+		excv.right_actuator = 0;
+		excv.excavator_speed = 0;
+		return true;
+	}
+	else return false;
 }
 
 void TeleopREST::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {
+ cout << "disabled" << disabled << endl;
+  if(joy->buttons[7] == 1){
+	if(disabled) disabled = false;
+	else disabled = true;
+  }
+  if(is_disabled()) return;
+
   geometry_msgs::Twist vel;  
-  double vl = joy->axes[left_];
-  double vr = joy->axes[right_];
+  double vl = joy->axes[left];
+  double vr = joy->axes[right];
 	if( vl == vr){
 		//forward/backward
 		vel.linear.x = vl; // or vr
@@ -60,7 +96,41 @@ void TeleopREST::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 		vel.angular.z = (vr - vl)/ROBOT_WIDTH;
 		vel.linear.x = vr - vel.angular.z * ROBOT_WIDTH / 2.0;
 	}
-  vel_pub_.publish(vel);
+  vel_pub.publish(vel);
+
+  //rover_controls::Excavation excv;
+
+  if(joy->buttons[0] == 1 && joy->buttons[3] == 1 && !disabled){
+	cout << "Actuators Disabled: Only toggle one button" << endl;
+	act_tog = 0;	
+  }
+  else if(joy->buttons[3] == 1 && !disabled){
+	cout << "Actuators set to EXTEND" << endl;	
+	act_tog = 1;	
+  }
+  else if(joy->buttons[0] == 1 && !disabled){
+	cout << "Actuators set to RETRACT" << endl;	
+	act_tog = -1;		
+  }
+  else{
+	cout << "Actuators set to " << act_tog << endl;	
+  }
+
+  rover_controls::Excavation excv;
+  if(act_tog == 1){
+	excv.left_actuator  = abs(joy->buttons[5]);
+	excv.right_actuator = abs(joy->buttons[4]);
+	excv.excavator_speed = -1 * (joy->axes[5] - 1) / 2;
+  }
+  else if(act_tog == -1){
+	excv.left_actuator  = -1 * abs(joy->buttons[5]);
+	excv.right_actuator = -1 * abs(joy->buttons[4]);
+	excv.excavator_speed = -1 * (joy->axes[5] - 1) / 2;
+  }
+  else {
+	return;
+  } 
+  excv_pub.publish(excv);
 }
 
 
