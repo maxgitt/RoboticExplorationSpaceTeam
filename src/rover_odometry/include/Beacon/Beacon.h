@@ -74,6 +74,7 @@ private:
 		const std::vector<double>& readings, 
 		const std::vector<std::pair<double,double>>& offsets,
                 std::pair<double, double>  old_pos);
+    friend class Odometry;
   
 };
 

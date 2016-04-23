@@ -2,7 +2,7 @@
  * File:   Odometry.h
  * Authors: pascualy
  *          Kishore B. Rao  Cell: 508-873-5384
- *          Bhairav Metha
+ *          Bhairav Mehta
  * Description: a class that detects and intializes beacon pairs. calculates pose and position.
  *
  * Created on December 21st, 2015, 4:20 PM
@@ -20,16 +20,40 @@
 #include <unordered_map>
 
 
+#include <iostream>
+#include <sys/resource.h>
+#include <sys/time.h>
+
 #ifndef ODOMETRY_H
 #define ODOMETRY_H
 
-#define NODENAMESPACE 
+class Timer {
+private:
+     struct rusage startu;
+     struct rusage endu;
+     double duration;
+public:
+     Timer() { getrusage(RUSAGE_SELF, &startu); }
+    
+     void recordTime(){
+         getrusage(RUSAGE_SELF, &endu);
+         double start_sec = startu.ru_utime.tv_sec + startu.ru_utime.tv_usec/1e7;
+         double end_sec = endu.ru_utime.tv_sec +endu.ru_utime.tv_usec/1e7;
+         duration = end_sec - start_sec;
+         } // recordTime()
+    
+        double getTime() { return duration; }
+};
+
+
 class Odometry{
 public:
 	Odometry();
-	//detects the beacons which are connected to the computer
-	void detectRoverBeacons(); 
+	//Detect the number of rover beacons connected to the rover
+	void detectRoverBeacons();
+    //Load the biases either manually or through the parameter server
 	void loadBiases();
+    //Return the 
 	std::pair<double,double> getPosition();
 	double getPose();
 	void updateOdometry();
@@ -81,6 +105,8 @@ private:
 	int numSieveBeacons = 0;
 	std::deque <double> runningTotal;
 	int currCount;
+    
+    	Timer timer;
 };
 
 const static std::string param_key = "/rover_odometry/";

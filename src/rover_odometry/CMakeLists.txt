@@ -67,6 +67,7 @@ target_link_libraries(rover_odometry
 
 target_link_libraries(rover_odometry Beacon Odometry)
 target_link_libraries(Odometry Beacon)
+
 #set_target_properties(rover_odometry PROPERTIES OUTPUT_NAME Beacon)
 
 #target_link_libraries(rover_odometry Odometry)
