@@ -56,10 +56,6 @@ private:
 	PID * linearx;
 	double linearx_set, linearx_in, linearx_out;
 
-	// PID controller for linear y
-	PID * lineary;
-	double lineary_set, lineary_in, lineary_out;
-
 	// PID controller for angular z
 	PID * angularz;
 	double angularz_set, angularz_in, angularz_out;

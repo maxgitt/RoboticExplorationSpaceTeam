@@ -11,8 +11,6 @@ MoveBase::setup(int argc, char ** argv){
 	// Construct PID objects
 	linearx = new PID(&currx, &linearx_out, &destx, 
 						Kp, Ki, Kd, AUTOMATIC);
-	lineary = new PID(&curry, &lineary_out, &desty,
-						Kp, Ki, Kd, AUTOMATIC);
 	angularz = new PID(&currth, &angularz_out, &destth,
 						Kp, Ki, Kd, AUTOMATIC);
 }
@@ -88,7 +86,6 @@ MoveBase::odomcb(const nav_msgs::Odometry::ConstPtr& msg){
 	
 	// Update linearx, lineary, and linearth velocities
 	linearx_in  = msg->twist.twist.linear.x;
-	lineary_in  = msg->twist.twist.linear.y;
 	angularz_in = msg->twist.twist.angular.z;
 }
 
@@ -131,13 +128,11 @@ MoveBase::move_to(double _destx, double _desty){
 	while(ros::ok() && !at_dest()){
 		// Compute new output
 		linearx->Compute();
-		lineary->Compute();
 		angularz->Compute();
 		
 		// Publish new output to cmd_vel
 		geometry_msgs::Twist msg;
 		msg.linear.x  = linearx_out;
-		msg.linear.y  = lineary_out;
 		msg.angular.z = angularz_out; 
 		pub.publish(msg);
 
@@ -165,7 +160,6 @@ MoveBase::record_path(){
 MoveBase::~MoveBase(){
 	// Clean Dyanmic Memory allocated by Object
 	delete linearx;
-	delete lineary;
 	delete angularz;
 }
 
