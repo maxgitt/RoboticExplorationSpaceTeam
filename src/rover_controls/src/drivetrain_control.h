@@ -62,6 +62,6 @@ DriveTrainControl::callback(const geometry_msgs::Twist &twist_aux){
 void 
 DriveTrainControl::transmit(){
 	stringstream ss; 
-	ss << '0' << ',' << vl << ',' << vr << ',' << vl << ',' << vr << '\n';		
-	uno_serial->write(ss.str());
+	ss << '0' << ',' << vl <<  ',' << vr << '\n';		
+	uno_serial->write(ss.str());	
 }

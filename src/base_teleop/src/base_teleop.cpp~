@@ -3,10 +3,11 @@
 #include <sensor_msgs/Joy.h>
 #include "rover_controls/Excavation.h"
 #include <iostream>
+#include <cmath>
 
 using std::cout; using std::endl;
 //rover physical properties
-#define ROBOT_WIDTH 1 //meters
+#define ROBOT_WIDTH .75 //meters
 #define WHEEL_DIAMETER .5 //meters
 
 class TeleopREST
@@ -30,6 +31,7 @@ private:
   // 1 - 
   bool disabled = true;
 
+  int excv_tog = 0;
   int act_tog = 0;
   int actL   = 0;
   int actR   = 0;
@@ -81,6 +83,23 @@ void TeleopREST::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
   geometry_msgs::Twist vel;  
   double vl = joy->axes[left];
   double vr = joy->axes[right];
+  if(vl < 0)
+  {
+    vl = -1 * sqrt((vl* -1));
+  }
+  else
+  {
+    vl = sqrt(vl);
+  }
+  if(vr < 0)
+  {
+    vr = -1 * sqrt((vr* -1));
+  }
+  else
+  {
+    vr = sqrt(vr);
+  }
+	
 	if( vl == vr){
 		//forward/backward
 		vel.linear.x = vl; // or vr
@@ -98,8 +117,6 @@ void TeleopREST::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 	}
   vel_pub.publish(vel);
 
-  //rover_controls::Excavation excv;
-
   if(joy->buttons[0] == 1 && joy->buttons[3] == 1 && !disabled){
 	cout << "Actuators Disabled: Only toggle one button" << endl;
 	act_tog = 0;	
@@ -116,20 +133,28 @@ void TeleopREST::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 	cout << "Actuators set to " << act_tog << endl;	
   }
 
+  if(joy->buttons[1] == 1 && joy->buttons[2] == 1 && !disabled){
+	cout << "Excavator Disabled: Only toggle one button" << endl;
+	excv_tog = 0;	
+  }
+  else if(joy->buttons[1] == 1 && !disabled){
+	cout << "Excavator set to FORWARD" << endl;	
+	excv_tog = 1;	
+  }
+  else if(joy->buttons[2] == 1 && !disabled){
+	cout << "Excavator set to REVERSE" << endl;	
+	excv_tog = -1;		
+  }
+  else{
+	cout << "Excavator set to " << excv_tog << endl;	
+  }
+
+
   rover_controls::Excavation excv;
-  if(act_tog == 1){
-	excv.left_actuator  = abs(joy->buttons[5]);
-	excv.right_actuator = abs(joy->buttons[4]);
-	excv.excavator_speed = -1 * (joy->axes[5] - 1) / 2;
-  }
-  else if(act_tog == -1){
-	excv.left_actuator  = -1 * abs(joy->buttons[5]);
-	excv.right_actuator = -1 * abs(joy->buttons[4]);
-	excv.excavator_speed = -1 * (joy->axes[5] - 1) / 2;
-  }
-  else {
-	return;
-  } 
+  excv.manual 		= true;
+  excv.left_actuator    = act_tog * abs(joy->buttons[4]);
+  excv.right_actuator   = act_tog * abs(joy->buttons[5]);
+  excv.excavator_speed  = excv_tog * (joy->axes[5] - 1) / 2;
   excv_pub.publish(excv);
 }
 
