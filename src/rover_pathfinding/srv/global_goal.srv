@@ -1,9 +1,0 @@
-float64[] x_coordinate_array
-float64[] y_coordinate_array
-float64 global_x
-float64 global_y
-bool path_sent
-bool goal_sent
-bool record_path
----
-bool at_dest

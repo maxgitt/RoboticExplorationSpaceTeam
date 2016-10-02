@@ -1,6 +1,0 @@
-<launch>
-	<node name="rover_motor_control" pkg="rover_motor_control" type="rover_motor_control" />
-	<node name="rover_encoder_control" pkg="rover_motor_control" type="rover_encoder_control">
-		<param name="wheel_diameter" value="0.14" />
-	</node>
-</launch>
