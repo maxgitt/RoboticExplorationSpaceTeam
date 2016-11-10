@@ -1,6 +1,5 @@
 build/
 devel/
-staging/
 decawave_driver
 sftp-config.json
 
