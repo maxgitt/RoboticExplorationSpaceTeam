@@ -11,15 +11,11 @@
 
 using namespace std;
 
-const string motor_conversion
-
 class DriveTrainControl {
 
 public:
-	DriveTrainControl() = delete; //do not create object without a serial port!!!
-	DriveTrainControl(serial::Serial * _uno_serial); 
-
-	//write to the arduino via a serial port
+	DriveTrainControl() = delete;
+	DriveTrainControl(serial::Serial * _uno_serial);
 	void transmit();
 private:
 	void callback(const geometry_msgs::Twist &twist_aux);
@@ -33,7 +29,7 @@ private:
 	serial::Serial * uno_serial;
 };
 
-//Initialize serial port and register callback
+//Initialize serial port 
 DriveTrainControl::DriveTrainControl(serial::Serial * _uno_serial) {
 	uno_serial = _uno_serial;
 	cmd_vel_sub = nh.subscribe("/cmd_vel", 10, &DriveTrainControl::callback, this);
@@ -46,8 +42,6 @@ DriveTrainControl::callback(const geometry_msgs::Twist &twist_aux){
 	double vel_th = twist_aux.angular.z;
 	double right_vel = 90;
 	double left_vel = 90;
-
-	
 	if(abs(vel_x) == 0){
 		// turning
 		right_vel = vel_th * ROBOT_WIDTH / 2.0 * 90 + 90;

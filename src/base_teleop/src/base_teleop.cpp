@@ -18,6 +18,8 @@ public:
 private:
   void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
   bool is_disabled();
+  //interpert the joystick commands as a Twist message 
+  geometry_msgs::Twist convertJoystickVelocity(const double& joyLeft, const double& joyRight)
   ros::NodeHandle nh_;
 
   int right;
@@ -71,6 +73,41 @@ bool TeleopREST::is_disabled(){
 	else return false;
 }
 
+
+//need to scale the velocity so that it is more sensitive in the middle we are using the square root function for this scaling
+void scale(double& velocity) {
+     velocity = sqrt(abs(velocity));
+     if (velocity < 0) {
+          velocity *= -1;
+     }
+}
+
+ geometry_msgs::Twist TelopREST::convertJoystickVelocity(const double& joyLeft, const double& joyRight) {
+     geometry_msgs::Twist vel; 
+     scale(joyLeft);
+     scale(joyRight);
+
+
+     if( joyLeft == joyRight){
+       //forward/backward
+       vel.linear.x = joyLeft; // or joyRight
+       vel.angular.z = 0;
+     }
+     else if( (-1 * joyLeft) == joyRight){
+       //sharp turning
+       vel.angular.z = 2*joyRight/ROBOT_WIDTH;
+       vel.linear.x = 0;
+     }
+     else{
+       //moving doing arcs
+       vel.angular.z = (joyRight - joyLeft)/ROBOT_WIDTH;
+       vel.linear.x = joyRight - (vel.angular.z * ROBOT_WIDTH)/ 2.0;
+     }
+
+     return vel;
+
+ }
+
 void TeleopREST::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {
  cout << "disabled" << disabled << endl;
@@ -80,42 +117,17 @@ void TeleopREST::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
   }
   if(is_disabled()) return;
 
-  geometry_msgs::Twist vel;  
-  double vl = joy->axes[left];
-  double vr = joy->axes[right];
-  if(vl < 0)
-  {
-    vl = -1 * sqrt((vl* -1));
-  }
-  else
-  {
-    vl = sqrt(vl);
-  }
-  if(vr < 0)
-  {
-    vr = -1 * sqrt((vr* -1));
-  }
-  else
-  {
-    vr = sqrt(vr);
-  }
-	
-	if( vl == vr){
-		//forward/backward
-		vel.linear.x = vl; // or vr
-		vel.angular.z = 0;
-	}
-	else if( (-1 * vl) == vr){
-		//turning
-		vel.angular.z = 2*vr/ROBOT_WIDTH;
-		vel.linear.x = 0;
-	}
-	else{
-		//moving doing arcs
-		vel.angular.z = (vr - vl)/ROBOT_WIDTH;
-		vel.linear.x = vr - vel.angular.z * ROBOT_WIDTH / 2.0;
-	}
-  vel_pub.publish(vel);
+  
+  double joyLeft = joy->axes[left]; //joyLeft and joyRight are values from -1 to 1
+  double joyRight = joy->axes[right];
+
+
+  vel_pub.publish(convertJoystickVelocity(joyLeft, joyRight));
+
+
+
+
+
 
   if(joy->buttons[0] == 1 && joy->buttons[3] == 1 && !disabled){
 	cout << "Actuators Disabled: Only toggle one button" << endl;
