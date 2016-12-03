@@ -1,0 +1,20 @@
+cmake_minimum_required(VERSION 2.8.3 FATAL_ERROR)
+project(encoder_plugin)
+
+find_package(roscpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(rover_encoder REQUIRED)
+
+include_directories(${roscpp_INCLUDE_DIRS})
+include_directories(${std_msgs_INCLUDE_DIRS})
+include_directories(${rover_encoder_INCLUDE_DIRS})
+
+find_package(gazebo REQUIRED)
+include_directories(${GAZEBO_INCLUDE_DIRS})
+link_directories(${GAZEBO_LIBRARY_DIRS})
+list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
+
+add_library(EncoderPlugin SHARED EncoderPlugin.cc)
+target_link_libraries(EncoderPlugin ${GAZEBO_LIBRARIES} ${roscpp_LIBRARIES})

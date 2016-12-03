@@ -1,0 +1,73 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+  <world name="default">
+
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- arena surface plane-->
+    <model name="arena-surface">
+      <pose>0 0 0 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>7.38 3.78 .1</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>7.38 3.78 .1</size>
+            </box>
+          </geometry>
+          <material>
+            <script>Gazebo/WoodPallet</script>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- arena wall left-->
+      <model name="arena-wall-left">
+      <pose>0 1.99 0 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>7.38 1 .1</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>7.38 .2 1</size>
+            </box>
+          </geometry>
+          <material>
+            <script>Gazebo/WoodPallet</script>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+
+    <include>
+      <uri>model://rover</uri>
+      <name>rover</name>
+      <pose>-2.0 7.0 0 0 0 0</pose>
+      <plugin name="rover_encoder" filename="libEncoderPlugin.so"/>
+      <plugin name="rover_odometry" filename="libOdometryPlugin.so"/>
+      <plugin name="rover_controls" filename="libControlsPlugin.so"/>
+    </include>
+
+    
+  </world>
+</sdf>
