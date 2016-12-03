@@ -10,4 +10,5 @@ Vagrant.configure(2) do |config|
   config.vm.provision :shell, path: "vagrantConfig.sh"
   config.vm.provision :shell, path: "rosConfig.sh"
   config.vm.provision :shell, path: "gazeboConfig.sh"
+  config.vm.provision :shell, path: "catkinConfig.sh"
 end
