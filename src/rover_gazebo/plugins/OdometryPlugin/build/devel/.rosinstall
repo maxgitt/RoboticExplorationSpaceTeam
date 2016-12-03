@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/pscualy/catkin_ws/src/rover_gazebo/plugins/OdometryPlugin/build/devel/setup.sh
