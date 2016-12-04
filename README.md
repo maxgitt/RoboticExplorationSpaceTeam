@@ -14,7 +14,13 @@ vagrant up
 
 Please wait for the Vagrantfile to finish set up of the virtualmachine (this may take 20-30 min).
 
-To begin .... from within Virtualbox.
+To boot up Virtualbox (local terminal):
+`vagrant reload`
+
+
+Login to Virtualbox.
+
+Within Virtualbox:
 ```
 mkdir catkin_ws
 cd catkin_ws
