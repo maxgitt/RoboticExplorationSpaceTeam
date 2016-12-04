@@ -42,8 +42,12 @@ git config --global credential.helper cache
 git config --global credential.helper 'cache --timeout=3600'
 ```
 
-Open a new terminal:
+Setup Bash
+`source /opt/ros/kinetic/setup.bash`
+
+Run Make
 ```
+cd catkin_ws/src
 catkin_make
 ```
 
