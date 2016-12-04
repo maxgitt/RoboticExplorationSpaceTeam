@@ -24,7 +24,7 @@ sudo adduser (this lets you set up your username, password, and extra info)
 Close virtualbox so that we can restart it the Virtual Machine. Now call:
 `vagrant up`
 
-Within Virtualbox:
+Within Virtualbox (open a new terminal):
 ```
 mkdir catkin_ws
 cd catkin_ws
