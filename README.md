@@ -29,3 +29,8 @@ To allow your VM to remember your git credentials:
 git config --global user.name "First_Name Last_Name"
 git config --global user.email "Your_Email@umich.edu"
 ```
+
+Open a terminal:
+```
+catkin_make
+```
