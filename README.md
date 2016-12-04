@@ -1,9 +1,9 @@
 # REST_RMC_2017
 
 Assume already installed:
-VirtualBox
-Vagrant
-git
+*VirtualBox
+*Vagrant
+*git
 
 
 This README will help you set up a virtual environment through vagrant.
