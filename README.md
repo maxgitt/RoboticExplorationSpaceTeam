@@ -14,18 +14,22 @@ vagrant up
 
 Please wait for the Vagrantfile to finish set up of the virtualmachine (this may take 20-30 min).
 
-To boot up Virtualbox (local terminal):
-`vagrant reload`
+To complete boot up of your Virtual Machine (local terminal):
+```
+vagrant reload
+vagrant ssh
+sudo adduser (this lets you set up your username, password, and extra info)
+```
 
+Close virtualbox so that we can restart it the Virtual Machine. Now call:
+`vagrant up`
 
-Login to Virtualbox.
-
-Within Virtualbox:
+Within Virtualbox (open a new terminal):
 ```
 mkdir catkin_ws
 cd catkin_ws
 git init
-git remote add origin https://github.com/YOUR_USERNAME/REST_RMC_2017.git (Note your github username is required for the full path).
+git remote add origin https://github.com/pascualy/REST_RMC_2017.git
 git fetch
 git checkout -t origin/master
 ```
@@ -38,8 +42,12 @@ git config --global credential.helper cache
 git config --global credential.helper 'cache --timeout=3600'
 ```
 
-Open a new terminal:
+Setup Bash
+`source /opt/ros/kinetic/setup.bash`
+
+Run Make
 ```
+cd catkin_ws/src
 catkin_make
 ```
 
