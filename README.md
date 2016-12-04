@@ -14,7 +14,7 @@ vagrant up
 
 Please wait for the Vagrantfile to finish set up of the virtualmachine (this may take 20-30 min).
 
-To complete boot up Virtualbox (local terminal):
+To complete boot up of your Virtual Machine (local terminal):
 ```
 vagrant reload
 vagrant ssh
