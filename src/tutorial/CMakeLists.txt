@@ -10,6 +10,7 @@ elseif(COMPILER_SUPPORTS_CXX0X)
 else()
 	message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -194,3 +195,5 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+add_executable(tutorial src/tutorial.cc)
+target_link_libraries(tutorial ${catkin_LIBRARIES})
