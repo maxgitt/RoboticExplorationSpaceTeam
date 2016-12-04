@@ -1,5 +1,11 @@
 # REST_RMC_2017
 
+Assume already installed:
+VirtualBox
+Vagrant
+git
+
+
 This README will help you set up a virtual environment through vagrant.
 ```
 cd vagrant
@@ -7,12 +13,6 @@ vagrant up
 ```
 
 Please wait for the Vagrantfile to finish set up of the virtualmachine (this may take 20-30 min).
-
-
-
-
-
-
 
 To begin .... from within Virtualbox.
 ```
