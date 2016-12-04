@@ -29,7 +29,7 @@ Within Virtualbox (open a new terminal):
 mkdir catkin_ws
 cd catkin_ws
 git init
-git remote add origin https://github.com/YOUR_USERNAME/REST_RMC_2017.git (Note your github username is required for the full path).
+git remote add origin https://github.com/pascualy/REST_RMC_2017.git
 git fetch
 git checkout -t origin/master
 ```
