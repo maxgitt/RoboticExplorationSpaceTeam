@@ -2,8 +2,8 @@ Editing a Vagrantfile
 
 When adding a new configuration, branch from the master.
 
-1) Create your new script
-2) Add the script to the Vagrantfile.
+1. Create your new script
+2. Add the script to the Vagrantfile.
 
 Creating Packages (Example):
 ```
