@@ -6,7 +6,7 @@ cd vagrant
 vagrant up
 ```
 
-Please wait for the Vagrantfile to finish set up of the virtualmachine (this may take 10-15 min).
+Please wait for the Vagrantfile to finish set up of the virtualmachine (this may take 20-30 min).
 
 
 
