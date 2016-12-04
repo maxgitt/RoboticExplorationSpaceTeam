@@ -32,7 +32,7 @@ git config --global credential.helper cache
 git config --global credential.helper 'cache --timeout=3600'
 ```
 
-Open a terminal:
+Open a new terminal:
 ```
 catkin_make
 ```
