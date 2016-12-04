@@ -3,7 +3,6 @@ Editing a Vagrantfile
 When adding a new configuration, branch from the master.
 
 1) Create your new script
-
 2) Add the script to the Vagrantfile.
 
 Creating Packages (Example):
@@ -29,10 +28,9 @@ package.xml, this is useful for updating dependencies so that your tutorial proj
 ```
 
 CMakeLists.txt
+
 1) add `message_generation` to find_packages
-
 2) add the `msg` file to `add_message_files`
-
 3) add `std_msgs` for the package to recognize the int32 type used in your Test.msg
 
 
