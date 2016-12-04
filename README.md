@@ -36,3 +36,5 @@ Open a new terminal:
 ```
 catkin_make
 ```
+
+If the make succeeds, you should get going by creating a new package via our [tutorial](https://github.com/pascualy/REST_RMC_2017/tree/master/usage).
