@@ -1,4 +1,4 @@
-Creating Packages (Example):
+Creating Packages (by Example):
 ```
 cd catkin_ws/src
 catkin_create_pkg tutorial roscpp std_msgs
