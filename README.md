@@ -14,11 +14,15 @@ vagrant up
 
 Please wait for the Vagrantfile to finish set up of the virtualmachine (this may take 20-30 min).
 
-To boot up Virtualbox (local terminal):
-`vagrant reload`
+To complete boot up Virtualbox (local terminal):
+```
+vagrant reload
+vagrant ssh
+sudo adduser (this lets you set up your username, password, and extra info)
+```
 
-
-Login to Virtualbox.
+Close virtualbox so that we can restart it the Virtual Machine. Now call:
+`vagrant up`
 
 Within Virtualbox:
 ```
