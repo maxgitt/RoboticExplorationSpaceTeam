@@ -26,8 +26,8 @@ CMakeLists.txt
 2. add the `msg` file to `add_message_files`
 3. add `std_msgs` for the package to recognize the int32 type used in your Test.msg
 4. at the very bottom add the executable (to be written) and libraries
-  ..1. `executable(tutorial src/tutorial.cc)`
-  ..2. `target_link_libraries(tutorial ${catkin_LIBRARIES})`
+⋅⋅1. `executable(tutorial src/tutorial.cc)`
+⋅⋅2. `target_link_libraries(tutorial ${catkin_LIBRARIES})`
 
 Create an executable file for you project called `tutorial.cc`.
 
