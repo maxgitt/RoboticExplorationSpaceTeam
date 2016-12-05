@@ -26,8 +26,8 @@ Close virtualbox so that we can restart it the Virtual Machine. Now call:
 
 Within Virtualbox (open a new terminal):
 ```
-mkdir catkin_ws
-cd catkin_ws
+mkdir ~/catkin_ws
+cd ~/catkin_ws
 git init
 git remote add origin https://github.com/pascualy/REST_RMC_2017.git
 git fetch
