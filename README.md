@@ -52,3 +52,20 @@ catkin_make
 ```
 
 If the make succeeds, you should get going by creating a new package via our [tutorial](https://github.com/pascualy/REST_RMC_2017/tree/master/usage).
+
+
+Upgrading VirtualBox to 5.1 and Extension Pack
+```
+sudo apt remove virtualbox virtualbox-5.0 virtualbox-4.*
+
+sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian xenial contrib" >> /etc/apt/sources.list.d/virtualbox.list'
+
+wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add -
+
+sudo apt update
+
+sudo apt install virtualbox-5.1
+
+Download and install the extension pack from https://www.virtualbox.org/wiki/Downloads
+
+```
