@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 
-#include "excavation_control.h"
 #include "drivetrain_control.h"
 #include "serial/serial.h"
 
@@ -22,12 +21,9 @@ main(int argc, char** argv){
 	nh.param("baud_rate", uno_baud_c, uno_baud_c);
 
 	serial::Serial * uno_serial = connect_to_serial(uno_port_c, uno_baud_c);
-
-	ExcavatorControl excavator_controller(uno_serial);
 	DriveTrainControl drivetrain_controller(uno_serial);
 	stringstream ss; 
 	while(ros::ok()) {
-		excavator_controller.transmit();
 		drivetrain_controller.transmit();
 		ros::spinOnce(); //basically calls the callback function: updatse the velocities 
 		ros::Duration(.1).sleep();

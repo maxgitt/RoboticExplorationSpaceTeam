@@ -20,8 +20,11 @@ public:
 private:
 	void callback(const geometry_msgs::Twist &twist_aux);
 
-	double vl = 90;
-	double vr = 90;
+	double vl = 0;
+	double vr = 0;
+	char dl = 'f';
+	char dr = 'f';
+
 	double robot_width, wheel_diameter;
 
 	ros::NodeHandle nh;
@@ -40,28 +43,38 @@ DriveTrainControl::callback(const geometry_msgs::Twist &twist_aux){
 	//cout << twist_aux.linear.x << twist_aux.angular.z << endl;
 	double vel_x =  twist_aux.linear.x;
 	double vel_th = twist_aux.angular.z;
-	double right_vel = 90;
-	double left_vel = 90;
+	double right_vel = 0;
+	double left_vel = 0;
 	if(abs(vel_x) == 0){
 		// turning
-		right_vel = vel_th * ROBOT_WIDTH / 2.0 * 90 + 90;
-		left_vel = 180 - right_vel;
+		right_vel = vel_th * ROBOT_WIDTH / 2.0 * 200;
+		left_vel = -1*right_vel;
 	}else if(abs(vel_th) == 0){
 		// forward / backward
-		left_vel  = vel_x * 90 + 90;
-		right_vel = vel_x * 90 + 90;
+		left_vel  = vel_x * 200;
+		right_vel = vel_x * 200;
 	}else{
 		// moving doing arcs
-		left_vel = (vel_x - vel_th * ROBOT_WIDTH / 2.0) * 90 + 90;
-		right_vel = (vel_x + vel_th * ROBOT_WIDTH / 2.0) * 90 + 90;
+		left_vel = (vel_x - vel_th * ROBOT_WIDTH / 2.0) * 200;
+		right_vel = (vel_x + vel_th * ROBOT_WIDTH / 2.0) * 200;
 	}
-	vl =  -1 * (left_vel - 180) ;
-	vr =  -1 * (right_vel - 180);
+	// vl =  -1 * (left_vel - 180) ;
+	// vr =  -1 * (right_vel - 180);
+	if(vl >= 0)
+		dl = 'f';
+	else
+		dl = 'b';
+	if(vr >= 0)
+		dr = 'f';
+	else
+		dr = 'b';
+
 }
 
 void 
 DriveTrainControl::transmit(){
 	stringstream ss; 
-	ss << '0' << ',' << vl <<  ',' << vr << '\n';		
+
+	ss <<  dl << ',' << vl <<  ',' << dr << ',' << vr << '\n';		
 	uno_serial->write(ss.str());	
 }
