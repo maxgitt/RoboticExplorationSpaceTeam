@@ -1,46 +1,24 @@
 <?xml version="1.0" ?>
 <sdf version="1.4">
-  <world name="default">
+  <!-- We use a custom world for the rover so that the camera angle is launched correctly -->
 
+  <world name="default">
     <include>
       <uri>model://ground_plane</uri>
     </include>
+
+    <!-- Global light source -->
     <include>
       <uri>model://sun</uri>
     </include>
 
-    <!-- arena surface plane-->
-    <model name="arena-surface">
-      <pose>0 0 0 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry>
-            <box>
-              <size>7.38 3.78 .1</size>
-            </box>
-          </geometry>
-        </collision>
-        <visual name="visual">
-          <geometry>
-            <box>
-              <size>7.38 3.78 .1</size>
-            </box>
-          </geometry>
-          <material>
-            <script>Gazebo/WoodPallet</script>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <!-- arena wall left-->
-      <model name="arena-wall-left">
+    <model name="arena-wall-left">
       <pose>0 1.99 0 0 0 0</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>7.38 1 .1</size>
+              <size>7.38 .2 1</size>
             </box>
           </geometry>
         </collision>
@@ -56,18 +34,14 @@
         </visual>
       </link>
     </model>
-
-
-
-    <include>
-      <uri>model://rover</uri>
-      <name>rover</name>
-      <pose>-2.0 7.0 0 0 0 0</pose>
-      <plugin name="rover_encoder" filename="libEncoderPlugin.so"/>
-      <plugin name="rover_odometry" filename="libOdometryPlugin.so"/>
-      <plugin name="rover_controls" filename="libControlsPlugin.so"/>
-    </include>
-
     
+    <!-- Focus camera on tall pendulum -->
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose>4.927360 -4.376610 3.740080 0.000000 0.275643 2.356190</pose>
+        <view_controller>orbit</view_controller>
+      </camera>
+    </gui>
+
   </world>
 </sdf>
