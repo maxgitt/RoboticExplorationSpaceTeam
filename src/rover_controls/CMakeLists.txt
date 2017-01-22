@@ -80,6 +80,7 @@ generate_messages(
   DEPENDENCIES
   geometry_msgs
   std_msgs
+  rover_controls
 )
 
 ################################################
@@ -199,4 +200,5 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 add_executable(rover_controls src/rover_controls.cpp)
+add_dependencies(rover_controls ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(rover_controls ${catkin_LIBRARIES})

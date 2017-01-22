@@ -68,4 +68,20 @@ sudo apt install virtualbox-5.1
 
 Download and install the extension pack from https://www.virtualbox.org/wiki/Downloads
 
+
+
+Package Information:
+
+Rover Description: Contains robot description files for Gazebo and Rviz
+	Details: rover.xacro defines the rover
+			 rover.gazebo defines the world for the simulation
+			 Launch file starts rviz with correct .xacro file and starts joint_state_publisher
+
+Rover Gazebo: Defines the world for the gazebo simulation
+
+
+Rover Navigation:  
+
+
+
 ```
