@@ -16,8 +16,8 @@
 		<param name="deadzone" value="0.12" />
 	</node>
 
- 	<include file="$(find rover_navigation)/launch/move_base.launch"/>
- 	<include file="$(find rover_gazebo)/launch/rover_world.launch"/>
+	<include file="$(find rover_navigation)/launch/move_base.launch"/> 	
+	<include file="$(find rover_gazebo)/launch/rover_world.launch"/>
  	<include file="$(find rover_description)/launch/rover_rviz.launch"/>
 
-</launch>
+</launch>	

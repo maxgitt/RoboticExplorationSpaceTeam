@@ -2,41 +2,41 @@
 <robot>
 
   <!-- ros_control plugin -->
-  <gazebo>
+<!--   <gazebo>
     <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
       <robotNamespace>/rover</robotNamespace>
       <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
     </plugin>
-  </gazebo>
+  </gazebo> -->
 
   <!-- Link1 -->
-  <gazebo reference="link1">
+<!--   <gazebo reference="link1">
     <material>Gazebo/Orange</material>
-  </gazebo>
+  </gazebo> -->
 
   <!-- Link2 -->
-  <gazebo reference="link2">
+<!--   <gazebo reference="link2">
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
     <material>Gazebo/Black</material>
-  </gazebo>
+  </gazebo> -->
 
   <!-- Link3 -->
-  <gazebo reference="link3">
+<!--   <gazebo reference="link3">
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
     <material>Gazebo/Orange</material>
-  </gazebo>
+  </gazebo> -->
 
   <!-- camera_link -->
-  <gazebo reference="camera_link">
+<!--   <gazebo reference="camera_link">
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
     <material>Gazebo/Red</material>
-  </gazebo>
+  </gazebo> -->
 
   <!-- hokuyo -->
-  <gazebo reference="hokuyo_link">
+  <gazebo reference="base_laser">
     <sensor type="gpu_ray" name="head_hokuyo_sensor">
       <pose>0 0 0 0 0 0</pose>
       <visualize>True</visualize>
@@ -66,14 +66,14 @@
         </noise>
       </ray>
       <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_gpu_laser.so">
-        <topicName>/rover/laser/scan</topicName>
-        <frameName>hokuyo_link</frameName>
+        <topicName>/scan</topicName>
+        <frameName>base_laser</frameName>
       </plugin>
     </sensor>
   </gazebo>
 
-  <!-- camera -->
-  <gazebo reference="camera_link">
+<!--   <!-- camera -->
+<!--   <gazebo reference="camera_link">
     <sensor type="camera" name="camera1">
       <update_rate>30.0</update_rate>
       <camera name="head">
@@ -88,11 +88,11 @@
           <far>300</far>
         </clip>
         <noise>
-          <type>gaussian</type>
+          <type>gaussian</type> -->
           <!-- Noise is sampled independently per pixel on each frame.  
                That pixel's noise value is added to each of its color
                channels, which at that point lie in the range [0,1]. -->
-          <mean>0.0</mean>
+     <!--      <mean>0.0</mean>
           <stddev>0.007</stddev>
         </noise>
       </camera>
@@ -111,6 +111,6 @@
         <distortionT2>0.0</distortionT2>
       </plugin>
     </sensor>
-  </gazebo>  
+  </gazebo>   --> 
 
 </robot>

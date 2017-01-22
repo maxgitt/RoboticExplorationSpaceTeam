@@ -59,7 +59,7 @@ void OdometryPublisher::odomCallback(const nav_msgs::Odometry::ConstPtr& old_odo
 
   //next, we'll publish the odometry message over ROS
   odom.header.frame_id = "odom";
-
+  odom.child_frame_id = "base_link";
   //publish the message
   odom_pub.publish(odom);
 
@@ -70,5 +70,9 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "odometry_publisher");
   OdometryPublisher odom;
-  ros::spin();
+  ros::Rate r(10); 
+  while (ros::ok()) {
+    ros::spinOnce();
+    r.sleep();
+  }  
 }
