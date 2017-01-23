@@ -12,6 +12,7 @@ Panels:
         - /Odometry1
         - /Map1
         - /Map2
+        - /Map3
         - /Path2
         - /Polygon2
       Splitter Ratio: 0.5
@@ -86,6 +87,11 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        front_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         front_left_wheel:
           Alpha: 1
           Show Axes: false
@@ -117,9 +123,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: -999999
+      Max Intensity: 2.12522764e-37
       Min Color: 0; 0; 0
-      Min Intensity: 999999
+      Min Intensity: 2.12522764e-37
       Name: LaserScan
       Position Transformer: XYZ
       Queue Size: 10
@@ -153,7 +159,7 @@ Visualization Manager:
       Value: true
     - Alpha: 0.699999988
       Class: rviz/Map
-      Color Scheme: map
+      Color Scheme: costmap
       Draw Behind: false
       Enabled: true
       Name: Map
@@ -162,7 +168,7 @@ Visualization Manager:
       Value: true
     - Alpha: 0.699999988
       Class: rviz/Map
-      Color Scheme: map
+      Color Scheme: costmap
       Draw Behind: false
       Enabled: true
       Name: Map
@@ -229,6 +235,36 @@ Visualization Manager:
       Topic: /move_base/global_costmap/footprint
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/LaserScan
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 999999
+      Min Color: 0; 0; 0
+      Min Intensity: 2.12522764e-37
+      Name: LaserScan
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.00999999978
+      Style: Flat Squares
+      Topic: /front_scan
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -253,22 +289,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 5.78986979
+      Distance: 5.27088165
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.26572657
-        Y: 0.316486418
-        Z: 8.04662704e-07
+        X: 2.77520943
+        Y: -0.635180473
+        Z: -1.49011612e-07
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.459796548
+      Pitch: 0.559796691
       Target Frame: <Fixed Frame>
       Value: ThirdPersonFollower (rviz)
-      Yaw: 0.810547531
+      Yaw: 3.62873888
     Saved:
       - Class: rviz/Orbit
         Distance: 1.65910709

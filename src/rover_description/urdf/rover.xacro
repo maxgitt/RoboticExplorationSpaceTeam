@@ -204,7 +204,7 @@
     </visual>
   </link>
   <joint name="hokuyo_joint" type="fixed">
-    <origin xyz="${base_radius - hokuyo_size/2} 0 ${base_height+hokuyo_size/4}" rpy="0 0 0" />
+    <origin xyz="${-1*base_radius - hokuyo_size/2} 0 ${base_height+hokuyo_size/4}" rpy="0 0 ${M_PI}" />
     <parent link="base_link"/>
     <child link="base_laser" />
   </joint>
@@ -237,6 +237,52 @@
       </plugin>
     </sensor>
   </gazebo>
+
+
+  <link name="front_laser">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://rover_description/meshes/hokuyo.dae"/>
+      </geometry>
+      <material name="Blue" />
+    </visual>
+  </link>
+
+  <joint name="front_hokuyo_joint" type="fixed">
+    <origin xyz="${base_radius - hokuyo_size/2} 0 ${.1+base_height+hokuyo_size/4}" rpy="0 .3 0" />
+    <parent link="base_link"/>
+    <child link="front_laser" />
+  </joint>
+
+  <gazebo reference="front_laser">
+    <material>Gazebo/Blue</material>
+    <turnGravityOff>false</turnGravityOff>
+    <sensor type="ray" name="front_hokuyo_sensor">
+      <pose>${hokuyo_size/2} 0 0 0 0 0</pose>
+      <visualize>true</visualize>
+      <update_rate>20</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.570796</min_angle>
+            <max_angle>1.570796</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.10</min>
+          <max>10.0</max>
+          <resolution>0.001</resolution>
+        </range>
+      </ray>
+      <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
+        <topicName>/front_scan</topicName>
+        <frameName>front_laser</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>  
   
   <!-- Differential drive controller  -->
   <gazebo>
