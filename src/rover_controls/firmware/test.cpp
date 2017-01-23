@@ -5,6 +5,9 @@
 
 ros::NodeHandle nh;
 
+// example client-side code
+
+
 std_msgs::String str_msg;
 ros::Publisher chatter("chatter", &str_msg);
 
