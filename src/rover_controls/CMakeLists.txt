@@ -19,6 +19,18 @@ find_package(catkin REQUIRED COMPONENTS
   serial
   std_msgs
   message_generation
+  rosserial_arduino
+  rosserial_client
+)
+
+rosserial_generate_ros_lib(
+  PACKAGE rosserial_arduino
+  SCRIPT make_libraries.py
+)
+
+rosserial_configure_client(
+  DIRECTORY firmware
+  TOOLCHAIN_FILE ${ROSSERIAL_ARDUINO_TOOLCHAIN}
 )
 
 ## System dependencies are found with CMake's conventions
@@ -199,6 +211,13 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+
+# Client (arduino) controllers
+rosserial_add_client_target(firmware test ALL)
+rosserial_add_client_target(firmware test-upload)
+
+# Host (PC) controllers
 add_executable(rover_controls src/rover_controls.cpp)
 add_dependencies(rover_controls ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(rover_controls ${catkin_LIBRARIES})

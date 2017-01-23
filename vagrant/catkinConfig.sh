@@ -1,5 +1,6 @@
 echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
 source ~/.bashrc
+mkdir ~/catkin_ws
 mkdir ~/catkin_ws/src
 cd ~/catkin_ws/src
 /opt/ros/kinetic/bin/catkin_make
