@@ -2,7 +2,5 @@
   <node pkg="rover_navigation" type="odometry_publisher" name="odom_node" output="screen">
 <!--     <param name="odom_param" value="param_value" />-->  </node>
 
- <!-- <node pkg="rover_setup_tf" type="tf_broadcaster" name="transform_node" output="screen">
-     <param name="transform_configuration_param" value="param_value" /> 
-  </node>-->
+
 </launch>

@@ -66,8 +66,8 @@
         </noise>
       </ray>
       <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_gpu_laser.so">
-        <topicName>/scan</topicName>
-        <frameName>base_laser</frameName>
+        <topicName>/back_scan</topicName>
+        <frameName>back_laser</frameName>
       </plugin>
     </sensor>
   </gazebo>
@@ -102,8 +102,8 @@
         </noise>
       </ray>
       <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_gpu_laser.so">
-        <topicName>/ObstacleScan</topicName>
-        <frameName>obstacle_laser</frameName>
+        <topicName>/FrontScan</topicName>
+        <frameName>front_laser</frameName>
       </plugin>
     </sensor>
   </gazebo>

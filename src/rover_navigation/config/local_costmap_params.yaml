@@ -4,7 +4,7 @@ rolling_window: true
 plugins:
   - {name: obstacles_laser,           type: "costmap_2d::ObstacleLayer"}
   - {name: inflation,                 type: "costmap_2d::InflationLayer"}
-
+  
 local_costmap:
   global_frame: /map
   robot_base_frame: base_link

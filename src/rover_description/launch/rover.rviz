@@ -3,18 +3,7 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded:
-        - /Global Options1
-        - /Status1
-        - /Grid1
-        - /RobotModel1
-        - /LaserScan1
-        - /Odometry1
-        - /Map1
-        - /Map2
-        - /Map3
-        - /Path2
-        - /Polygon2
+      Expanded: ~
       Splitter Ratio: 0.5
     Tree Height: 1606
   - Class: rviz/Selection
@@ -67,7 +56,7 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        base_laser:
+        back_laser:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -120,12 +109,12 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 2.12522764e-37
+      Max Intensity: 999999
       Min Color: 0; 0; 0
-      Min Intensity: 2.12522764e-37
+      Min Intensity: 999999
       Name: LaserScan
       Position Transformer: XYZ
       Queue Size: 10
@@ -133,11 +122,41 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.00999999978
       Style: Flat Squares
-      Topic: /scan
+      Topic: /front_scan
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/LaserScan
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 999999
+      Min Color: 0; 0; 0
+      Min Intensity: 999999
+      Name: LaserScan
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.00999999978
+      Style: Flat Squares
+      Topic: /back_scan
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
     - Angle Tolerance: 0.100000001
       Class: rviz/Odometry
       Color: 255; 25; 0
@@ -235,36 +254,6 @@ Visualization Manager:
       Topic: /move_base/global_costmap/footprint
       Unreliable: false
       Value: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/LaserScan
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 999999
-      Min Color: 0; 0; 0
-      Min Intensity: 2.12522764e-37
-      Name: LaserScan
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.00999999978
-      Style: Flat Squares
-      Topic: /front_scan
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -301,10 +290,10 @@ Visualization Manager:
         Z: -1.49011612e-07
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.559796691
+      Pitch: 0.5497967
       Target Frame: <Fixed Frame>
       Value: ThirdPersonFollower (rviz)
-      Yaw: 3.62873888
+      Yaw: 5.64873838
     Saved:
       - Class: rviz/Orbit
         Distance: 1.65910709
