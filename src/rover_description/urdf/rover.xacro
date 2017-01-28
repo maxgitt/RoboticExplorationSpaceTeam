@@ -314,13 +314,12 @@
     </collision>
   </link>
 
-  
   <gazebo>
     <plugin name="imu_controller" filename="libgazebo_ros_imu.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>50.0</updateRate> 
       <bodyName>imu_link</bodyName>
-      <topicName>imu_data</topicName>
+      <topicName>/gazebo/imu_data</topicName>
       <frameName>imu_link</frameName>
       <serviceName>imu_service</serviceName>
       <gaussianNoise>2.89e-08</gaussianNoise>
@@ -328,6 +327,7 @@
       <rpyOffsets>0 0 0</rpyOffsets>
     </plugin>
   </gazebo>
+
   <!-- Differential drive controller  -->
   <gazebo>
     <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
@@ -349,7 +349,7 @@
       <commandTopic>cmd_vel</commandTopic>
       <odometrySource>world-</odometrySource>
       <odometryFrame>odom</odometryFrame> 
-      <odometryTopic>odom</odometryTopic> 
+      <odometryTopic>gazebo/odom</odometryTopic> 
       <robotBaseFrame>base_footprint</robotBaseFrame>
     </plugin>
   </gazebo> 
