@@ -1,0 +1,6 @@
+<launch>
+	<node pkg="amcl" type="amcl" name="amcl" >
+		<rosparam file="$(find rover_navigation)/config/amcl_params.yaml" command="load"  />
+		<remap from="scan" to="back_scan" />
+	</node>	
+</launch>

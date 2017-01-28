@@ -250,7 +250,7 @@
   </link>
 
   <joint name="front_hokuyo_joint" type="fixed">
-    <origin xyz="${base_radius - hokuyo_size/2} 0 ${.1+base_height+hokuyo_size/4}" rpy="0 .3 0" />
+    <origin xyz="${base_radius - hokuyo_size/2} 0 ${.1+base_height+hokuyo_size/4}" rpy="0 .2 0" />
     <parent link="base_link"/>
     <child link="front_laser" />
   </joint>
@@ -284,6 +284,48 @@
     </sensor>
   </gazebo>  
   
+
+  <link name="imu_link">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0" />
+      <cylinder_inertia  m="0.1" r="0.03" h="0.03" />
+    </inertial>
+
+    <visual name="visual">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.03 0.03 0.03"/>
+      </geometry>
+    </visual>
+    <collision name="collision">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.03 0.03 0.03"/>
+      </geometry>
+    </collision>
+  </link>
+
+
+  <joint name="imu_joint" type="fixed">
+    <origin xyz="0 0 .0" rpy="0 0 0" />
+    <parent link="base_link"/>
+    <child link="imu_link" />
+  </joint>
+
+
+  <gazebo reference="imu_link">    
+      <plugin name="imu_plugin" filename="libgazebo_ros_imu.so">
+          <alwaysOn>true</alwaysOn>       
+          <bodyName>imu_link</bodyName>
+          <topicName>/imu_data</topicName>
+          <serviceName>/simu_service</serviceName>
+          <gaussianNoise>0.0</gaussianNoise>
+          <updateRate>10.0</updateRate> 
+      </plugin>
+  </gazebo>
+
+
   <!-- Differential drive controller  -->
   <gazebo>
     <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
