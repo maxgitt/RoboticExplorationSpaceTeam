@@ -35,13 +35,13 @@
   <!-- caster wheel radius and height -->
   <!-- caster wheel mass -->
   <xacro:property name="caster_f_height" value="0.04" /> 
-  <xacro:property name="caster_f_radius" value="0.025" /> 
+  <xacro:property name="caster_f_radius" value="0.027" /> 
   <xacro:property name="caster_f_mass" value="0.5" /> <!-- in kg-->
 
   <!-- caster wheel radius and height -->
   <!-- caster wheel mass -->
   <xacro:property name="caster_b_height" value="0.04" /> 
-  <xacro:property name="caster_b_radius" value="0.025" /> 
+  <xacro:property name="caster_b_radius" value="0.027" /> 
   <xacro:property name="caster_b_mass" value="0.5" /> <!-- in kg-->
 
   <!-- Wheels -->
@@ -204,7 +204,7 @@
     </visual>
   </link>
   <joint name="hokuyo_joint" type="fixed">
-    <origin xyz="${-1*base_radius + hokuyo_size/2} 0 ${base_height+hokuyo_size/4}" rpy="0 0 ${M_PI}" />
+    <origin xyz="${-1*base_radius + hokuyo_size/2} 0 ${.1+base_height+hokuyo_size/4}" rpy="0 0 ${M_PI}" />
     <parent link="base_link"/>
     <child link="back_laser" />
   </joint>
@@ -349,7 +349,7 @@
       <commandTopic>cmd_vel</commandTopic>
       <odometrySource>world-</odometrySource>
       <odometryFrame>odom</odometryFrame> 
-      <odometryTopic>gazebo/odom</odometryTopic> 
+      <odometryTopic>/gazebo/odom</odometryTopic> 
       <robotBaseFrame>base_footprint</robotBaseFrame>
     </plugin>
   </gazebo> 

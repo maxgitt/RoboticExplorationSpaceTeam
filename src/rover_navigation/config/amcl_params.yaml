@@ -18,15 +18,15 @@ transform_tolerance:  0.5       # 0.1, 0.2
 recovery_alpha_slow:  0.001     # 0.0, 0.0, 0.001
 recovery_alpha_fast:  0.1       # 0.0, 0.0, 0.1
 initial_pose_x:       0.0       # 0.0
-initial_pose_y:       0.0       # 0.0
+initial_pose_y:       1.0       # 0.0
 initial_pose_a:       0.0       # 0.0
 initial_cov_xx:       0.25      # 0.25
 initial_cov_yy:       0.25      # 0.25
 initial_cov_aa:       0.06853   # 0.06853 
 gui_publish_rate:     10.0      # -1.0, 10
 save_pose_rate:       0.5       # 0.5
-use_map_topic:        false     # false
-first_map_only:       false     # false
+use_map_topic:        true     # false
+first_map_only:       true     # false
 
 # Laser Model Parameters 
 laser_min_range:            -1.0   # -1.0
@@ -50,7 +50,7 @@ odom_alpha4:      0.07    # 0.2      translational drift caused by rotation
 odom_alpha5:      0.07    # 0.2, 0.1 Holonomic drive systems only
 odom_frame_id:    /odom
 base_frame_id:    /base_link 
-global_frame_id:  /map 
+global_frame_id:  /map
 
 
 
