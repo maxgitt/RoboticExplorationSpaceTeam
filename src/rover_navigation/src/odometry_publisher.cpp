@@ -34,10 +34,10 @@ void OdometryPublisher::odomCallback(const nav_msgs::Odometry::ConstPtr& old_odo
 {
 	nav_msgs::Odometry odom = *old_odom;
 
-  // tf_broadcaster.sendTransform(
-  //       tf::StampedTransform(
-  //         tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.0, 0.0, 0.0)),
-  //         ros::Time::now(),"map", "odom"));
+  tf_broadcaster.sendTransform(
+        tf::StampedTransform(
+          tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.0, 0.0, 0.0)),
+          ros::Time::now(),"map", "/gazebo/odom"));
 
   // tf_broadcaster.sendTransform(
   //       tf::StampedTransform(

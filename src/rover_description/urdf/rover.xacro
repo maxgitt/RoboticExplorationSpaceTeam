@@ -64,7 +64,7 @@
 
   <!-- BASE-FOOTPRINT -->
   <!-- base_footprint is a fictitious link(frame) that is on the ground right below base_link origin -->
-<!--   <link name="base_footprint">
+  <link name="base_footprint">
     <inertial>
       <mass value="0.0001" />
       <origin xyz="0 0 0" />
@@ -86,10 +86,10 @@
 
   <joint name="base_footprint_joint" type="fixed">
     <origin xyz="0 0 ${wheel_radius - base_z_origin_to_wheel_origin}" rpy="0 0 0" />
-    <parent link="base_footprint"/>
-    <child link="base_link" />
+    <parent link="base_link"/>
+    <child link="base_footprint" />
   </joint>
-   -->
+  
   <!-- BASE-LINK -->
   <!--Actual body/chassis of the robot-->
   <link name="base_link">
@@ -347,10 +347,10 @@
       <wheelTorque>30</wheelTorque>
       <wheelAcceleration>1.8</wheelAcceleration>
       <commandTopic>cmd_vel</commandTopic>
-      <odometrySource>world-</odometrySource>
-      <odometryFrame>odom</odometryFrame> 
+      <odometrySource>world</odometrySource>
+      <odometryFrame>/gazebo/odom</odometryFrame> 
       <odometryTopic>/gazebo/odom</odometryTopic> 
-      <robotBaseFrame>base_footprint</robotBaseFrame>
+      <robotBaseFrame>/gazebo/base_link</robotBaseFrame>
     </plugin>
   </gazebo> 
 </robot>
