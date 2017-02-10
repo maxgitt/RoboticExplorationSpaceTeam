@@ -145,6 +145,29 @@ URGCWrapper::~URGCWrapper(){
 	urg_close(&urg_);
 }
 
+bool URGCWrapper::intensity_inrange(int low, int high, int arr[], int length) {
+    int sum = 0;
+    for (int i = 0; i < length; ++i) {
+        sum += arr[i];
+    }
+    double avg = sum/length;
+    if (low <= avg && avg <= high) {
+        return true;
+    }
+    return false;
+}
+
+bool URGCWrapper::intensity_increases(int arr1[], int arr2[], int length){
+    int sum = 0;
+    for (int i = 0; i < length; ++i) {
+        sum = arr2[i] - arr1[i];
+    }
+    if (sum > 0) {
+        return true;
+    }
+    return false;
+}
+
 bool URGCWrapper::grabScan(const sensor_msgs::LaserScanPtr& msg){
   msg->header.frame_id = frame_id_;
   msg->angle_min = getAngleMin();

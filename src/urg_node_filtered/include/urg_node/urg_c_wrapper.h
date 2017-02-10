@@ -122,6 +122,32 @@ namespace urg_node
     bool grabScan(const sensor_msgs::MultiEchoLaserScanPtr& msg);
 
   private:
+    // Takes the running avg of window size
+    // This normalizes/smooths intensity noise
+    // Shoud be tested with different window sizes
+    void smooth_intensities(int intensity_steps[], int num_steps, int window_size);
+      
+    // Samples 1-2N steps
+    // Compares the average intensity of (1 to N) vs (N+1 to 2N)
+    // Determines if avg intensity change was large enough
+    // Returns: Step indices where intensity changes are above intensity delta threshold,
+    //              these steps are labeled as edges, decreasing step edge indices are multiplied by -1
+    vector<int> determine_intensity_edges(int intensity_steps[], int num_steps, int window_size, int intensity_delta_threshold);
+    
+    // Maintains temporary gap length in steps between edges
+    // Allows for +-N variability
+    // Updates temporary gap length as most recent gap between edges
+    // Resets gap length if new gap length is farther then (temp_gap+-N)
+    // Returns once k sequential gaps are found without updating gap length
+    vector<int> find_flag_ends(vector<int>& edge_indices, );
+    
+    // Averages an array of intensities
+    // Returns if avg is within bounds
+    bool intensity_inrange(int low, int high, int arr[]);
+      
+    // THIS FUNCTION SHOULD BE USED IN DETERMINE_INTENSITY_EDGES for Sampling
+    bool intensity_increases(int arr1[], int arr2[], int length);
+      
     void initialize(bool& using_intensity, bool& using_multiecho);
 
     bool isIntensitySupported();
