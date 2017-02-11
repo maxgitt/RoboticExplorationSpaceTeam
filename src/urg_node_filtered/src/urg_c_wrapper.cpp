@@ -96,54 +96,109 @@ void URGCWrapper::initialize(bool& using_intensity, bool& using_multiecho){
   skip_ = 0;
 
   if(using_intensity){
-  	using_intensity = isIntensitySupported();
+    using_intensity = isIntensitySupported();
   }
 
   if(using_multiecho){
-  	using_multiecho = isMultiEchoSupported();
+    using_multiecho = isMultiEchoSupported();
   }
 
   use_intensity_ = using_intensity;
-	use_multiecho_ = using_multiecho;
+  use_multiecho_ = using_multiecho;
 
-	measurement_type_ = URG_DISTANCE;
-	if(use_intensity_ && use_multiecho_){
-		measurement_type_ = URG_MULTIECHO_INTENSITY;
-	} else if(use_intensity_){
-	    measurement_type_ = URG_DISTANCE_INTENSITY;
-	} else if(use_multiecho_){
-		measurement_type_ = URG_MULTIECHO;
-	}
+  measurement_type_ = URG_DISTANCE;
+  if(use_intensity_ && use_multiecho_){
+    measurement_type_ = URG_MULTIECHO_INTENSITY;
+  } else if(use_intensity_){
+      measurement_type_ = URG_DISTANCE_INTENSITY;
+  } else if(use_multiecho_){
+    measurement_type_ = URG_MULTIECHO;
+  }
 }
 
 void URGCWrapper::start(){
-	if(!started_){
-		int result = urg_start_measurement(&urg_, measurement_type_, 0, skip_);
-		if (result < 0) {
-	      std::stringstream ss;
-	      ss << "Could not start Hokuyo measurement:\n";
-	      if(use_intensity_){
-	      	ss << "With Intensity" << "\n";
-	      }
-	      if(use_multiecho_){
-	      	ss << "With MultiEcho" << "\n";
-	      }
-	      ss << urg_error(&urg_);
-	      throw std::runtime_error(ss.str());
-	    }
+  if(!started_){
+    int result = urg_start_measurement(&urg_, measurement_type_, 0, skip_);
+    if (result < 0) {
+        std::stringstream ss;
+        ss << "Could not start Hokuyo measurement:\n";
+        if(use_intensity_){
+          ss << "With Intensity" << "\n";
+        }
+        if(use_multiecho_){
+          ss << "With MultiEcho" << "\n";
+        }
+        ss << urg_error(&urg_);
+        throw std::runtime_error(ss.str());
+      }
     }
     started_ = true;
 }
 
 void URGCWrapper::stop(){
-	urg_stop_measurement(&urg_);
-	started_ = false;
+  urg_stop_measurement(&urg_);
+  started_ = false;
 }
 
 URGCWrapper::~URGCWrapper(){
-	stop();
-	urg_close(&urg_);
+  stop();
+  urg_close(&urg_);
 }
+
+// Takes the running avg of window size
+// This normalizes/smooths intensity noise
+// Shoud be tested with different window sizes
+vector<int> smooth_intensities(int intensity_steps[], int num_steps, int window_size) {
+    if (window_size % 2 == 0) {
+        cerr << "Window size cannot be even\n";
+    }
+    if (window_size > num_steps) {
+        cerr << "Window size cannot exceed num steps\n";
+    }
+    vector<int> smoothed_intensities(num_steps);
+    int buf = (window_size/2);
+    int running_sum = 0;
+    
+    //setup first window
+    for (int i = 0; i < buf+1; ++i) {
+        running_sum += intensity_steps[i];
+    }
+    smoothed_intensities[0] = running_sum/(buf+1);
+    
+    //Calculate remaining averages ignoring values outside of step range
+    for (int i = 1; i < num_steps; ++i) {
+        if (i <= buf) {
+            running_sum += intensity_steps[i+buf];
+            smoothed_intensities[i] = running_sum/(i+buf+1);
+        }
+        else if( i >= (num_steps-buf)) {
+            running_sum -= intensity_steps[i-buf-1];
+            smoothed_intensities[i] = running_sum/(num_steps-i+buf);
+        }
+        else {
+            running_sum += intensity_steps[i+buf];
+            running_sum -= intensity_steps[i-buf-1];
+            smoothed_intensities[i] = running_sum/(window_size);
+        }
+    }
+    
+    return smoothed_intensities;
+}
+
+  
+// Samples 1-2N steps
+// Compares the average intensity of (1 to N) vs (N+1 to 2N)
+// Determines if avg intensity change was large enough
+// Returns: Step indices where intensity changes are above intensity delta threshold,
+//              these steps are labeled as edges, decreasing step edge indices are multiplied by -1
+vector<int> determine_intensity_edges(int intensity_steps[], int num_steps, int window_size, int intensity_delta_threshold);
+
+// Maintains temporary gap length in steps between edges
+// Allows for +-N variability
+// Updates temporary gap length as most recent gap between edges
+// Resets gap length if new gap length is farther then (temp_gap+-N)
+// Returns once k sequential gaps are found without updating gap length
+vector<int> find_flag_ends(vector<int>& edge_indices, );
 
 bool URGCWrapper::intensity_inrange(int low, int high, int arr[], int length) {
     int sum = 0;
@@ -184,9 +239,9 @@ bool URGCWrapper::grabScan(const sensor_msgs::LaserScanPtr& msg){
   unsigned long long system_time_stamp = 0;
 
   if(use_intensity_){
-  	num_beams = urg_get_distance_intensity(&urg_, &data_[0], &intensity_[0], &time_stamp, &system_time_stamp);
+    num_beams = urg_get_distance_intensity(&urg_, &data_[0], &intensity_[0], &time_stamp, &system_time_stamp);
   } else {
-  	num_beams = urg_get_distance(&urg_, &data_[0], &time_stamp, &system_time_stamp);
+    num_beams = urg_get_distance(&urg_, &data_[0], &time_stamp, &system_time_stamp);
   } 
   if (num_beams <= 0) {
     return false;
@@ -197,15 +252,15 @@ bool URGCWrapper::grabScan(const sensor_msgs::LaserScanPtr& msg){
   msg->header.stamp = msg->header.stamp + system_latency_ + user_latency_ + getAngularTimeOffset();
   msg->ranges.resize(num_beams);
   if(use_intensity_){
-  	msg->intensities.resize(num_beams);
+    msg->intensities.resize(num_beams);
   }
   
   for (int i = 0; i < num_beams; i++) {
     if(data_[(i) + 0] != 0){
       msg->ranges[i] = (float)data_[i]/1000.0;
       if(use_intensity_){
-      	msg->intensities[i] = intensity_[i];
-  	  }
+        msg->intensities[i] = intensity_[i];
+      }
     } else {
       msg->ranges[i] = std::numeric_limits<float>::quiet_NaN();
       continue;
@@ -230,9 +285,9 @@ bool URGCWrapper::grabScan(const sensor_msgs::MultiEchoLaserScanPtr& msg){
   unsigned long long system_time_stamp;
 
   if(use_intensity_){
-  	num_beams = urg_get_multiecho_intensity(&urg_, &data_[0], &intensity_[0], &time_stamp, &system_time_stamp);
+    num_beams = urg_get_multiecho_intensity(&urg_, &data_[0], &intensity_[0], &time_stamp, &system_time_stamp);
   } else {
-  	num_beams = urg_get_multiecho(&urg_, &data_[0], &time_stamp, &system_time_stamp);
+    num_beams = urg_get_multiecho(&urg_, &data_[0], &time_stamp, &system_time_stamp);
   } 
   if (num_beams <= 0) {
     return false;
@@ -243,7 +298,7 @@ bool URGCWrapper::grabScan(const sensor_msgs::MultiEchoLaserScanPtr& msg){
   msg->header.stamp = msg->header.stamp + system_latency_ + user_latency_ + getAngularTimeOffset();
   msg->ranges.reserve(num_beams);
   if(use_intensity_){
-  	msg->intensities.reserve(num_beams);
+    msg->intensities.reserve(num_beams);
   } 
 
   for (size_t i = 0; i < num_beams; i++) {
@@ -257,8 +312,8 @@ bool URGCWrapper::grabScan(const sensor_msgs::MultiEchoLaserScanPtr& msg){
       if(data_[(URG_MAX_ECHO * i) + j] != 0){
         range_echo.echoes.push_back((float)data_[(URG_MAX_ECHO * i) + j]/1000.0f);
         if(use_intensity_){
-        	intensity_echo.echoes.push_back(intensity_[(URG_MAX_ECHO * i) + j]);
-    	  }
+          intensity_echo.echoes.push_back(intensity_[(URG_MAX_ECHO * i) + j]);
+        }
       } else {
         break;
       }
@@ -400,7 +455,7 @@ void URGCWrapper::setUserLatency(const double latency){
 // Must be called before urg_start
 bool URGCWrapper::setAngleLimitsAndCluster(double& angle_min, double& angle_max, int cluster){
   if(started_){
-  	return false; // Must not be streaming
+    return false; // Must not be streaming
   }
 
   // Set step limits
@@ -410,22 +465,22 @@ bool URGCWrapper::setAngleLimitsAndCluster(double& angle_min, double& angle_max,
 
   // Make sure step limits are not the same
   if(first_step_ == last_step_){
-  	// Make sure we're not at a limit
-  	int min_step;
-	int max_step;
-	urg_step_min_max(&urg_, &min_step, &max_step);
-	if(first_step_ == min_step){ // At beginning of range
-		last_step_ = first_step_ + 1;
-	} else { // At end of range (or all other cases)
-		first_step_ = last_step_ - 1;
-	} 
+    // Make sure we're not at a limit
+    int min_step;
+  int max_step;
+  urg_step_min_max(&urg_, &min_step, &max_step);
+  if(first_step_ == min_step){ // At beginning of range
+    last_step_ = first_step_ + 1;
+  } else { // At end of range (or all other cases)
+    first_step_ = last_step_ - 1;
+  } 
   }
 
   // Make sure angle_max is greater than angle_min (should check this after end limits)
   if(last_step_ < first_step_){
-  	double temp = first_step_;
-  	first_step_ = last_step_;
-  	last_step_ = temp;
+    double temp = first_step_;
+    first_step_ = last_step_;
+    last_step_ = temp;
   }
 
   angle_min = urg_step2rad(&urg_, first_step_);
@@ -438,18 +493,18 @@ bool URGCWrapper::setAngleLimitsAndCluster(double& angle_min, double& angle_max,
 }
 
 bool URGCWrapper::setSkip(int skip){
-	skip_ = skip;
+  skip_ = skip;
 }
 
 bool URGCWrapper::isIntensitySupported(){
   if(started_){
-  	return false; // Must not be streaming
+    return false; // Must not be streaming
   }
 
   urg_start_measurement(&urg_, URG_DISTANCE_INTENSITY, 0, 0);
   int ret = urg_get_distance_intensity(&urg_, &data_[0], &intensity_[0], NULL, NULL);
   if(ret <= 0){
-  	return false; // Failed to start measurement with intensity: must not support it
+    return false; // Failed to start measurement with intensity: must not support it
   }
   urg_stop_measurement(&urg_);
   return true;
@@ -457,13 +512,13 @@ bool URGCWrapper::isIntensitySupported(){
 
 bool URGCWrapper::isMultiEchoSupported(){
   if(started_){
-  	return false; // Must not be streaming
+    return false; // Must not be streaming
   }
 
   urg_start_measurement(&urg_, URG_MULTIECHO, 0, 0);
   int ret = urg_get_multiecho(&urg_, &data_[0], NULL, NULL);
   if(ret <= 0){
-  	return false; // Failed to start measurement with multiecho: must not support it
+    return false; // Failed to start measurement with multiecho: must not support it
   }
   urg_stop_measurement(&urg_);
   return true;
@@ -484,22 +539,22 @@ ros::Duration URGCWrapper::getAngularTimeOffset() const{
 ros::Duration URGCWrapper::computeLatency(size_t num_measurements){
   system_latency_.fromNSec(0);
 
-	ros::Duration start_offset = getNativeClockOffset(1);
-	ros::Duration previous_offset;
+  ros::Duration start_offset = getNativeClockOffset(1);
+  ros::Duration previous_offset;
 
-	std::vector<ros::Duration> time_offsets(num_measurements);
-	for (size_t i = 0; i < num_measurements; i++){
-		ros::Duration scan_offset = getTimeStampOffset(1);
-		ros::Duration post_offset = getNativeClockOffset(1);
-		ros::Duration adjusted_scan_offset = scan_offset - start_offset;
-		ros::Duration adjusted_post_offset = post_offset - start_offset;
-		ros::Duration average_offset;
-		average_offset.fromSec((adjusted_post_offset.toSec() + previous_offset.toSec())/2.0);
+  std::vector<ros::Duration> time_offsets(num_measurements);
+  for (size_t i = 0; i < num_measurements; i++){
+    ros::Duration scan_offset = getTimeStampOffset(1);
+    ros::Duration post_offset = getNativeClockOffset(1);
+    ros::Duration adjusted_scan_offset = scan_offset - start_offset;
+    ros::Duration adjusted_post_offset = post_offset - start_offset;
+    ros::Duration average_offset;
+    average_offset.fromSec((adjusted_post_offset.toSec() + previous_offset.toSec())/2.0);
 
-		time_offsets[i] = adjusted_scan_offset - average_offset;
+    time_offsets[i] = adjusted_scan_offset - average_offset;
 
-		previous_offset = adjusted_post_offset;
-	}
+    previous_offset = adjusted_post_offset;
+  }
 
   // Get median value
   // Sort vector using nth_element (partially sorts up to the median index)
@@ -524,13 +579,13 @@ ros::Duration URGCWrapper::getNativeClockOffset(size_t num_measurements){
   std::vector<ros::Duration> time_offsets(num_measurements);
   for (size_t i = 0; i < num_measurements; i++)
   {
-  	ros::Time request_time = ros::Time::now();
-  	ros::Time laser_time;
-  	laser_time.fromNSec(1e6*(uint64_t)urg_time_stamp(&urg_)); // 1e6 * milliseconds = nanoseconds
-  	ros::Time response_time = ros::Time::now();
-  	ros::Time average_time;
-  	average_time.fromSec((response_time.toSec()+request_time.toSec())/2.0);
-  	time_offsets[i] = laser_time - average_time;
+    ros::Time request_time = ros::Time::now();
+    ros::Time laser_time;
+    laser_time.fromNSec(1e6*(uint64_t)urg_time_stamp(&urg_)); // 1e6 * milliseconds = nanoseconds
+    ros::Time response_time = ros::Time::now();
+    ros::Time average_time;
+    average_time.fromSec((response_time.toSec()+request_time.toSec())/2.0);
+    time_offsets[i] = laser_time - average_time;
   }
 
   if(urg_stop_time_stamp_mode(&urg_) < 0){
@@ -556,32 +611,32 @@ ros::Duration URGCWrapper::getTimeStampOffset(size_t num_measurements){
 
   std::vector<ros::Duration> time_offsets(num_measurements);
   for(size_t i = 0; i < num_measurements; i++){
-  	long time_stamp;
+    long time_stamp;
     unsigned long long system_time_stamp;
-  	int ret = 0;
+    int ret = 0;
 
-   	if(measurement_type_ == URG_DISTANCE){
-   		ret = urg_get_distance(&urg_, &data_[0], &time_stamp, &system_time_stamp);
-   	} else if(measurement_type_ == URG_DISTANCE_INTENSITY){
-  		ret = urg_get_distance_intensity(&urg_, &data_[0], &intensity_[0], &time_stamp, &system_time_stamp);
-   	} else if(measurement_type_ == URG_MULTIECHO){
-   		ret = urg_get_multiecho(&urg_, &data_[0], &time_stamp, &system_time_stamp);
-   	} else if(measurement_type_ == URG_MULTIECHO_INTENSITY){
-   		ret = urg_get_multiecho_intensity(&urg_, &data_[0], &intensity_[0], &time_stamp, &system_time_stamp);
-   	}
+    if(measurement_type_ == URG_DISTANCE){
+      ret = urg_get_distance(&urg_, &data_[0], &time_stamp, &system_time_stamp);
+    } else if(measurement_type_ == URG_DISTANCE_INTENSITY){
+      ret = urg_get_distance_intensity(&urg_, &data_[0], &intensity_[0], &time_stamp, &system_time_stamp);
+    } else if(measurement_type_ == URG_MULTIECHO){
+      ret = urg_get_multiecho(&urg_, &data_[0], &time_stamp, &system_time_stamp);
+    } else if(measurement_type_ == URG_MULTIECHO_INTENSITY){
+      ret = urg_get_multiecho_intensity(&urg_, &data_[0], &intensity_[0], &time_stamp, &system_time_stamp);
+    }
 
-   	if(ret <= 0){
-   		std::stringstream ss;
-  	  ss << "Cannot get scan to measure time stamp offset.";
-  	  throw std::runtime_error(ss.str());
-   	}
+    if(ret <= 0){
+      std::stringstream ss;
+      ss << "Cannot get scan to measure time stamp offset.";
+      throw std::runtime_error(ss.str());
+    }
 
-   	ros::Time laser_timestamp;
-   	laser_timestamp.fromNSec(1e6*(uint64_t)time_stamp);
+    ros::Time laser_timestamp;
+    laser_timestamp.fromNSec(1e6*(uint64_t)time_stamp);
     ros::Time system_time;
     system_time.fromNSec((uint64_t)system_time_stamp);
 
-   	time_offsets[i] = laser_timestamp - system_time;
+    time_offsets[i] = laser_timestamp - system_time;
   }
 
   stop();
