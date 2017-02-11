@@ -22,9 +22,9 @@ private:
 
 OdometryPublisher::OdometryPublisher()
 {
-  odom_pub = nh_.advertise<nav_msgs::Odometry>("odom", 50);
+  odom_pub = nh_.advertise<nav_msgs::Odometry>("/odom", 50);
 
-  odom_sub = nh_.subscribe<nav_msgs::Odometry>("/odom", 1, &OdometryPublisher::odomCallback, this);
+  odom_sub = nh_.subscribe<nav_msgs::Odometry>("/gazebo/odom", 1, &OdometryPublisher::odomCallback, this);
 
   current_time = ros::Time::now();
   last_time = ros::Time::now();
@@ -32,18 +32,17 @@ OdometryPublisher::OdometryPublisher()
 
 void OdometryPublisher::odomCallback(const nav_msgs::Odometry::ConstPtr& old_odom)
 {
-	nav_msgs::Odometry odom = *old_odom;
+  nav_msgs::Odometry odom = *old_odom;
 
   tf_broadcaster.sendTransform(
         tf::StampedTransform(
           tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.0, 0.0, 0.0)),
+          ros::Time::now(),"map", "odom"));
+ tf_broadcaster.sendTransform(
+        tf::StampedTransform(
+          tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.0, 0.0, 0.0)),
           ros::Time::now(),"map", "/gazebo/odom"));
 
-  // tf_broadcaster.sendTransform(
-  //       tf::StampedTransform(
-  //         tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.0, 0.0, 0.0)),
-  //         ros::Time::now(),"base_link", "laser"));
-  
   //since all odometry is 6DOF we'll need a quaternion created from yaw
   geometry_msgs::Quaternion odom_quat = odom.pose.pose.orientation;
 
