@@ -15,7 +15,7 @@
 	<node respawn="true" pkg="joy" type="joy_node" name="base_joy" />
 
   	<include file="$(find rover_navigation)/launch/rover_sim_config.launch"/>
-	<include file="$(find rover_navigation)/launch/move_base_sim.launch"/> 	
+	<include file="$(find rover_navigation)/launch/move_base.launch"/> 	
 	<include file="$(find rover_gazebo)/launch/rover_world.launch"/>
  	<include file="$(find rover_description)/launch/rover_rviz.launch"/>
 
