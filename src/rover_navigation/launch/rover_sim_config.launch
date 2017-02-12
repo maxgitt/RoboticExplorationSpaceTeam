@@ -1,0 +1,4 @@
+<launch>
+  	<node pkg="rover_navigation" type="odometry_publisher" name="odom_node" output="screen"/>
+  	<remap from="odometry/filtered" to="odometry/filtered_map"/>
+</launch>
