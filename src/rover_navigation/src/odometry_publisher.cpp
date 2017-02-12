@@ -24,7 +24,7 @@ OdometryPublisher::OdometryPublisher()
 {
   odom_pub = nh_.advertise<nav_msgs::Odometry>("odom", 50);
 
-  odom_sub = nh_.subscribe<nav_msgs::Odometry>("/odom", 1, &OdometryPublisher::odomCallback, this);
+  odom_sub = nh_.subscribe<nav_msgs::Odometry>("/gazebo/odom", 1, &OdometryPublisher::odomCallback, this);
 
   current_time = ros::Time::now();
   last_time = ros::Time::now();
