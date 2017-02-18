@@ -19,8 +19,8 @@ find_package(catkin REQUIRED COMPONENTS
   serial
   std_msgs
   message_generation
-  rosserial_arduino
-  rosserial_client
+#  rosserial_arduino
+#  rosserial_client
 )
 
 rosserial_generate_ros_lib(
