@@ -191,14 +191,109 @@ vector<int> smooth_intensities(int intensity_steps[], int num_steps, int window_
 // Determines if avg intensity change was large enough
 // Returns: Step indices where intensity changes are above intensity delta threshold,
 //              these steps are labeled as edges, decreasing step edge indices are multiplied by -1
-vector<int> determine_intensity_edges(int intensity_steps[], int num_steps, int window_size, int intensity_delta_threshold);
+vector<int> determine_intensity_edges(int intensity_steps[], int num_steps, int window_size, int intensity_delta_threshold) {
+  // Edges are defined as the step after an intensity jump
+
+  // If too many edges -- increase threshold
+  // If not enough edges -- consider taking differences between non-adjacent samples aka account for climbing (or remove smoothing function)
+
+  vector<int> intensity_edges;
+
+  for (int i = 0; i < num_steps-(window_size*2); ++i) {
+    
+    int sample_sum_1 = 0;
+    int sample_sum_2 = 0;
+
+    // Calculate sum of sample 1 and sample 2
+    for (int j = 0; j < window_size; ++j) {
+      sample_sum_1 += intensity_steps[i+j];
+      sample_sum_2 += intensity_steps[i+window_size+j];
+    }
+
+    // Determine averages
+    int sample_avg_1 = sample_sum_1/window_size;
+    int sample_avg_2 = sample_sum_2/window_size;
+  
+    // Determine if function increased or decreased beyond threshold
+    int intensity_delta = sample_avg_2 - sample_avg_1;
+    if (abs(intensity_delta) > intensity_delta_threshold) {
+      // Intensity is increasing
+      if (intensity_delta > 0) {
+        // Select first step of second sample as edge index
+        intensity_edges.push_back(i+window_size);
+      }
+      // Intensity is decreasing
+      else {
+        // Select first step of second sample as edge index
+        intensity_edges.push_back(-(i+window_size));
+      }
+    }
+  }
+  return intensity_edges;
+}
 
 // Maintains temporary gap length in steps between edges
 // Allows for +-N variability
 // Updates temporary gap length as most recent gap between edges
 // Resets gap length if new gap length is farther then (temp_gap+-N)
 // Returns once k sequential gaps are found without updating gap length
-vector<int> find_flag_ends(vector<int>& edge_indices, );
+// Assert that expected oscillation of edge intensity occurs
+vector<int> find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_edges) {
+
+  if (edge_indices.size() < 2 ) {
+    cerr << "Must have at least 2 edges\n";
+  }
+
+  vector<int> flag_ends(2);
+  vector<int> flag_pattern_edges;
+  // Initialze found edges and push first edge into edge_indices
+  int found_edges = 1;
+  flag_pattern_edges.push_back(abs(edge_indices[0]));
+
+  // Initialize gap length to #steps (aka distance) between first two edges
+  int gap_length = abs(edge_indices[1]) - abs(edge_indices[0]);
+
+  // Count useful edges
+  for (int i = 0; i < edge_indices.size()-1 ; ++i) {
+    // High->Low or Low->High intensity change 
+    if (edge_indices[i] > 0 && edge_indices[i+1] < 0
+      || edge_indices[i] < 0 && edge_indices[i+1] > 0) {
+      // Valid intensity change 
+      if ((abs(edge_indices[i+1]) - abs(edge_indices[i])) < (gap_length + gap_epsilon)
+        && (abs(edge_indices[i+1]) - abs(edge_indices[i])) > (gap_length - gap_epsilon) {
+          // Valid gap_length
+          // Update gap_length
+          gap_length = abs(edge_indices[i+1]) - abs(edge_indices[i]);
+          // Update found_edges and push back validated edge
+          found_edges++;
+          flag_pattern_edges.push_back(abs(edge_indices[i+1]));
+      }
+      // Gap_length was too large or small 
+      else {
+        // Reset to initial values
+        found_edges = 1;
+        flag_pattern_edges.clear();
+        flag_pattern_edges.push_back(abs(edge_indices[i+1]));
+      }
+    }
+    // Low->low or high->high intensity change
+    else {
+        // Reset to initial values
+        found_edges = 1;
+        flag_pattern_edges.clear();
+        flag_pattern_edges.push_back(abs(edge_indices[i+1]));
+    }
+  }
+
+  if (found_edges != exp_edges) {
+    cerr << "Did not detect flag\n";
+  }
+  else {
+    flag_ends.push_back(flag_pattern_edges[0]);
+    flag_ends.push_back(flag_pattern_edges[exp_edges]);
+  }
+  return flag_ends;
+}
 
 bool URGCWrapper::intensity_inrange(int low, int high, int arr[], int length) {
     int sum = 0;
