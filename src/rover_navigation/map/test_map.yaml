@@ -6,3 +6,4 @@ free_thresh: 0.196 # Taken from the Willow Garage map in the turtlebot_navigatio
 negate: 0
 width:  3.78
 height: 7.38
+frame_id: "map"
