@@ -365,6 +365,7 @@ int main(int argc, char **argv)
             vector<int> detected_edges = determine_intensity_edges(smoothed_steps, 1080, det_int_edges_window_size, det_int_edges_delta_threshold);
             vector<int> flag_ends = find_flag_ends(detected_edges, find_flag_ends_gap_epsilon, find_flag_ends_exp_edges);
             vector<double> pose = get_position(flag_ends, msg->ranges);
+
             pose.push_back(get_orientation(flag_ends, msg->ranges));
 
             ros::Publisher pose_odom;

@@ -35,6 +35,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 using namespace urg_node;
+using namespace std;
 
 URGCWrapper::URGCWrapper(const std::string& ip_address, const int ip_port, bool& using_intensity, bool& using_multiecho){
   // Store for comprehensive diagnostics
@@ -151,12 +152,13 @@ URGCWrapper::~URGCWrapper(){
 // Shoud be tested with different window sizes
 vector<int> URGCWrapper::smooth_intensities(float32 intensity_steps[], int num_steps, int window_size) {
     if (window_size % 2 == 0) {
-        cerr << "Window size cannot be even\n";
-    }
-    if (window_size > num_steps) {
-        cerr << "Window size cannot exceed num steps\n";
+        window_size += 1;
     }
     vector<int> smoothed_intensities(num_steps);
+    if (window_size > num_steps) {
+      smoothed_intensities[0] = -99999;
+      return smoothed_intensities;
+    }
     int buf = (window_size/2);
     int running_sum = 0;
     
@@ -198,6 +200,10 @@ vector<int> URGCWrapper::determine_intensity_edges(vector<int> intensity_steps, 
   // If not enough edges -- consider taking differences between non-adjacent samples aka account for climbing (or remove smoothing function)
 
   vector<int> intensity_edges;
+  if (intensity_steps == -99999) {
+    intensity_edges.push_back(-99999);
+    return intensity_edges;
+  }
 
   for (int i = 0; i < num_steps-(window_size*2); ++i) {
     
@@ -241,11 +247,13 @@ vector<int> URGCWrapper::determine_intensity_edges(vector<int> intensity_steps, 
 // Returns left and right flag end steps in that order
 vector<int> URGCWrapper::find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_edges) {
 
+  vector<int> flag_ends(2);
   if (edge_indices.size() < 2 ) {
-    cerr << "Must have at least 2 edges\n";
+    flag_ends.push_back(-99999);
+    return flag_ends;
   }
 
-  vector<int> flag_ends(2);
+  
   vector<int> flag_pattern_edges;
   // Initialze found edges and push first edge into edge_indices
   int found_edges = 1;
@@ -287,7 +295,7 @@ vector<int> URGCWrapper::find_flag_ends(vector<int>& edge_indices, int gap_epsil
   }
 
   if (found_edges != exp_edges) {
-    cerr << "Did not detect flag\n";
+    flag_ends.push_back(-99999);
   }
   else {
     flag_ends.push_back(flag_pattern_edges[0]);
@@ -304,8 +312,13 @@ vector<double> URGCWrapper::get_position(vector<int>& flag_ends, float32 distanc
 
   double dist_left_end = distance_steps[flag_ends[0]];
   double dist_right_end = distance_steps[flag_ends[1]];
-
   vector<double> coordinates(2);
+
+  if (flag_ends[0] == -99999) {
+    coordinates.push_back(-99999);
+    coordinates.push_back(-99999);
+    return coordinates;
+  }
 
   coordinates.push_back((pow(dist_right_end, 2) - pow(dist_left_end, 2) + 6.111) / 3.15);
   coordinates.push_back(sqrt(-2560000*pow(dist_left_end,4) + 3200*pow(dist_left_end,2)*(1600*pow(dist_right_end,2) + 3969) - pow((3969 - 1600*pow(dist_right_end,2)),2))/5040);
@@ -322,6 +335,9 @@ vector<double> URGCWrapper::get_position(vector<int>& flag_ends, float32 distanc
 // Returns updated pose vector by appending rover's orientation to its position
 double URGCWrapper::get_orientation(vector<int>& flag_ends, float32 distance_steps[]) {
 
+  if (flag_ends[0] == -99999) {
+    return -99999;
+  }
   double angle_increment = 0.25;
   double angle_to_left = flag_ends[0]*angle_increment;
   double dist_to_flag_center = get_dist_to_flag_center(position);
