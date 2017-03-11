@@ -354,6 +354,23 @@ int main(int argc, char **argv)
 		      if(urg_->grabScan(msg)){
 		        laser_pub.publish(msg);
 		        laser_freq_->tick();
+
+            // Start flag-based pose estimation
+            int smooth_intensities_window_size = 5; // filter size
+            int det_int_edges_window_size = 4; // how many samples on each side to avg to look for an edge
+            int det_int_edges_delta_threshold = 600; // how large of a jump for an edge
+            int find_flag_ends_gap_epsilon = 4; // # of steps between each edge to be a flag segment
+            int find_flag_ends_exp_edges = 6; // # of expected edges 
+            vector<int> smoothed_steps = smooth_intensities(msg->intensities, 1080, smooth_intensities_window_size);
+            vector<int> detected_edges = determine_intensity_edges(smoothed_steps, 1080, det_int_edges_window_size, det_int_edges_delta_threshold);
+            vector<int> flag_ends = find_flag_ends(detected_edges, find_flag_ends_gap_epsilon, find_flag_ends_exp_edges);
+            vector<double> pose = get_position(flag_ends, msg->ranges);
+            pose.push_back(get_orientation(flag_ends, msg->ranges));
+
+            ros::Publisher pose_odom;
+            pose_odom = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/back_laser_pose", 50);
+            tf::TransformBroadcaster tf_broadcaster;
+            publish_pose(pose, tf_broadcaster);
 		      } else {
 		        ROS_WARN_THROTTLE(10.0, "Could not grab single echo scan.");
 		        device_status_ = urg_->getSensorStatus();

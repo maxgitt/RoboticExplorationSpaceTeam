@@ -124,7 +124,6 @@ namespace urg_node
 
     bool grabScan(const sensor_msgs::MultiEchoLaserScanPtr& msg);
 
-  private:
     // Takes the running avg of window size
     // This normalizes/smooths intensity noise
     // Shoud be tested with different window sizes
@@ -162,9 +161,9 @@ namespace urg_node
 
     // Pose consists of the rover's position and orientation
     // Publishes a vector containing the rover's pose (x,y,theta)
-    // 
-    void publish_pose(vector<double>& pose);
+    void publish_pose(vector<double>& pose_in, tf::TransformBroadcaster tf_broadcaster);
 
+ private:
     // Calculate the distance to the center of the flag 
     double get_dist_to_flag_center(vector<double> position);
 

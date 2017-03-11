@@ -32,6 +32,7 @@
  */
 
 #include <urg_node/urg_c_wrapper.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 using namespace urg_node;
 
@@ -148,7 +149,7 @@ URGCWrapper::~URGCWrapper(){
 // Takes the running avg of window size
 // This normalizes/smooths intensity noise
 // Shoud be tested with different window sizes
-vector<int> smooth_intensities(float32 intensity_steps[], int num_steps, int window_size) {
+vector<int> URGCWrapper::smooth_intensities(float32 intensity_steps[], int num_steps, int window_size) {
     if (window_size % 2 == 0) {
         cerr << "Window size cannot be even\n";
     }
@@ -185,13 +186,12 @@ vector<int> smooth_intensities(float32 intensity_steps[], int num_steps, int win
     return smoothed_intensities;
 }
 
-  
 // Samples 1-2N steps
 // Compares the average intensity of (1 to N) vs (N+1 to 2N)
 // Determines if avg intensity change was large enough
 // Returns: Step indices where intensity changes are above intensity delta threshold,
 //              these steps are labeled as edges, decreasing step edge indices are multiplied by -1
-vector<int> determine_intensity_edges(float32 intensity_steps[], int num_steps, int window_size, int intensity_delta_threshold) {
+vector<int> URGCWrapper::determine_intensity_edges(vector<int> intensity_steps, int num_steps, int window_size, int intensity_delta_threshold) {
   // Edges are defined as the step after an intensity jump
 
   // If too many edges -- increase threshold
@@ -239,7 +239,7 @@ vector<int> determine_intensity_edges(float32 intensity_steps[], int num_steps, 
 // Checks once k sequential gaps are found without updating gap length
 // Assert that expected oscillation of edge intensity occurs
 // Returns left and right flag end steps in that order
-vector<int> find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_edges) {
+vector<int> URGCWrapper::find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_edges) {
 
   if (edge_indices.size() < 2 ) {
     cerr << "Must have at least 2 edges\n";
@@ -300,7 +300,7 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_e
 // Uses trig to compute the coordinates of the center of the rover,
 //      relative to the center of the sieve at (0,0)
 // Returns (x,y) coordinate vector of the rover
-vector<double> get_position(vector<int>& flag_ends, float32 distance_steps[]) {
+vector<double> URGCWrapper::get_position(vector<int>& flag_ends, float32 distance_steps[]) {
 
   double dist_left_end = distance_steps[flag_ends[0]];
   double dist_right_end = distance_steps[flag_ends[1]];
@@ -320,7 +320,7 @@ vector<double> get_position(vector<int>& flag_ends, float32 distance_steps[]) {
 // Postive value means facing left of center
 // Negative value means facing right of center
 // Returns updated pose vector by appending rover's orientation to its position
-double get_orientation(vector<int>& flag_ends, float32 distance_steps[]) {
+double URGCWrapper::get_orientation(vector<int>& flag_ends, float32 distance_steps[]) {
 
   double angle_increment = 0.25;
   double angle_to_left = flag_ends[0]*angle_increment;
@@ -334,22 +334,17 @@ double get_orientation(vector<int>& flag_ends, float32 distance_steps[]) {
 
 }
 
-// Pose consists of the rover's position and orientation
-// Publishes a vector containing the rover's pose (x,y,theta)
-// 
-void publish_pose(vector<double>& pose);
-
 // Calculate the distance to the center of the flag 
-double get_dist_to_flag_center(vector<double> position) {
+double URGCWrapper::get_dist_to_flag_center(vector<double> position) {
 
   double x_flag_center = 1.94;
   // dist_center^2 = (x^2 - 1.94) - y^2
   return sqrt(pow((position[0] - x_flag_center)),2) - pow(position[1],2);
 }
 
-double get_angle_left_to_center(double dist_to_flag_center, vector<int>& flag_ends, double dist_to_left_flag_end) {
+double URGCWrapper::get_angle_left_to_center(double dist_to_flag_center, vector<int>& flag_ends, double dist_to_left_flag_end) {
 
-    double half_sieve_length = .7875;
+  double half_sieve_length = .7875;
 
   //c^2 = a^2 + b^2 -2abcos(angle_left_to_center);
   //c: half of flag length (1.575/2) = .7875
@@ -358,6 +353,25 @@ double get_angle_left_to_center(double dist_to_flag_center, vector<int>& flag_en
 
   return acos((pow(dist_to_left_flag_end,2) + pow(dist_to_flag_center,2) - pow(half_sieve_length,2))/ (2*dist_to_flag_center*dist_to_left_flag_end));
 }
+
+void URGCWrapper::publish_pose(vector<double>& pose_in, tf::TransformBroadcaster tf_broadcaster) {
+  geometry_msgs::PoseWithCovarianceStamped pose_out;
+  pose_out.header.frame_id = 'back_laser_pose';
+  pose_out.pose.position.x = pose_in[0];
+  pose_out.pose.position.y = pose_in[1];
+  pose_out.pose.position.z = 0;
+  pose_out.pose.orientation.x = 0;
+  pose_out.pose.orientation.y = 0;
+  pose_out.pose.orientation.z = pose_in[2];
+  pose_out.pose.orientation.w = 0;
+  pose_pub.publish(pose_out);
+    
+  tf_broadcaster.sendTransform(
+    tf::StampedTransform(
+      tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.2, 0.0, 0.0)),
+        ros::Time::now(),"back_laser_pose", "map"));
+}
+
 
 bool URGCWrapper::intensity_inrange(int low, int high, int arr[], int length) {
     int sum = 0;
