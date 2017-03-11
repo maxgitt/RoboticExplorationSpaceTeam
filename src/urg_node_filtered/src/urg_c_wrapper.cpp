@@ -148,7 +148,7 @@ URGCWrapper::~URGCWrapper(){
 // Takes the running avg of window size
 // This normalizes/smooths intensity noise
 // Shoud be tested with different window sizes
-vector<int> smooth_intensities(int intensity_steps[], int num_steps, int window_size) {
+vector<int> smooth_intensities(float32 intensity_steps[], int num_steps, int window_size) {
     if (window_size % 2 == 0) {
         cerr << "Window size cannot be even\n";
     }
@@ -191,7 +191,7 @@ vector<int> smooth_intensities(int intensity_steps[], int num_steps, int window_
 // Determines if avg intensity change was large enough
 // Returns: Step indices where intensity changes are above intensity delta threshold,
 //              these steps are labeled as edges, decreasing step edge indices are multiplied by -1
-vector<int> determine_intensity_edges(int intensity_steps[], int num_steps, int window_size, int intensity_delta_threshold) {
+vector<int> determine_intensity_edges(float32 intensity_steps[], int num_steps, int window_size, int intensity_delta_threshold) {
   // Edges are defined as the step after an intensity jump
 
   // If too many edges -- increase threshold
@@ -236,8 +236,9 @@ vector<int> determine_intensity_edges(int intensity_steps[], int num_steps, int 
 // Allows for +-N variability
 // Updates temporary gap length as most recent gap between edges
 // Resets gap length if new gap length is farther then (temp_gap+-N)
-// Returns once k sequential gaps are found without updating gap length
+// Checks once k sequential gaps are found without updating gap length
 // Assert that expected oscillation of edge intensity occurs
+// Returns left and right flag end steps in that order
 vector<int> find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_edges) {
 
   if (edge_indices.size() < 2 ) {
@@ -299,7 +300,7 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_e
 // Uses trig to compute the coordinates of the center of the rover,
 //      relative to the center of the sieve at (0,0)
 // Returns (x,y) coordinate vector of the rover
-vector<double> get_position(vector<int>& flag_ends, int distance_steps[]) {
+vector<double> get_position(vector<int>& flag_ends, float32 distance_steps[]) {
 
   double dist_left_end = distance_steps[flag_ends[0]];
   double dist_right_end = distance_steps[flag_ends[1]];
@@ -316,21 +317,47 @@ vector<double> get_position(vector<int>& flag_ends, int distance_steps[]) {
 //      the angle between the 540th (or real center) step vs the step corresponding 
 //      to the flag center
 // Orientation of 0 means rover is perpendicular to sieve
-// Postive value means 
+// Postive value means facing left of center
+// Negative value means facing right of center
 // Returns updated pose vector by appending rover's orientation to its position
-vector<double> get_orientation(vector<int>& position, vector<int>& flag_ends, int distance_steps[]) {
+double get_orientation(vector<int>& flag_ends, float32 distance_steps[]) {
 
-  //
-  
+  double angle_increment = 0.25;
+  double angle_to_left = flag_ends[0]*angle_increment;
+  double dist_to_flag_center = get_dist_to_flag_center(position);
+  double angle_left_to_center = get_angle_left_to_center(dist_to_flag_center, flag_ends, distance_steps[flag_ends[0]]);
+
+  // theta_c = theta_l + theta_lc
+  double angle_to_center = angle_to_left + angle_left_to_center;
+  // orientation = theta_c - 135 degrees
+  return angle_to_center - 135;
+
 }
 
 // Pose consists of the rover's position and orientation
 // Publishes a vector containing the rover's pose (x,y,theta)
 // 
-void publish_pose(vector<double>& pose)
+void publish_pose(vector<double>& pose);
 
-// Calculate the step closest to the center of the flag 
-int calc_flag_center();
+// Calculate the distance to the center of the flag 
+double get_dist_to_flag_center(vector<double> position) {
+
+  double x_flag_center = 1.94;
+  // dist_center^2 = (x^2 - 1.94) - y^2
+  return sqrt(pow((position[0] - x_flag_center)),2) - pow(position[1],2);
+}
+
+double get_angle_left_to_center(double dist_to_flag_center, vector<int>& flag_ends, double dist_to_left_flag_end) {
+
+    double half_sieve_length = .7875;
+
+  //c^2 = a^2 + b^2 -2abcos(angle_left_to_center);
+  //c: half of flag length (1.575/2) = .7875
+  //b: dist_to_flag_center
+  //a: dist_to_left_flag_end
+
+  return acos((pow(dist_to_left_flag_end,2) + pow(dist_to_flag_center,2) - pow(half_sieve_length,2))/ (2*dist_to_flag_center*dist_to_left_flag_end));
+}
 
 bool URGCWrapper::intensity_inrange(int low, int high, int arr[], int length) {
     int sum = 0;
