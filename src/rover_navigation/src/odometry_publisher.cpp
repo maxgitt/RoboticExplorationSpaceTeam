@@ -24,7 +24,7 @@ OdometryPublisher::OdometryPublisher()
 {
   odom_pub = nh_.advertise<nav_msgs::Odometry>("odom", 50);
 
-  odom_sub = nh_.subscribe<nav_msgs::Odometry>("/odom", 1, &OdometryPublisher::odomCallback, this);
+  odom_sub = nh_.subscribe<nav_msgs::Odometry>("/gazebo/odom", 1, &OdometryPublisher::odomCallback, this);
 
   current_time = ros::Time::now();
   last_time = ros::Time::now();
@@ -45,28 +45,28 @@ void OdometryPublisher::odomCallback(const nav_msgs::Odometry::ConstPtr& old_odo
   //         ros::Time::now(),"base_link", "laser"));
   
   //since all odometry is 6DOF we'll need a quaternion created from yaw
-  geometry_msgs::Quaternion odom_quat = odom.pose.pose.orientation;
+  // geometry_msgs::Quaternion odom_quat = odom.pose.pose.orientation;
 
-  //first, we'll publish the transform over tf
-  geometry_msgs::TransformStamped odom_trans;
-  odom_trans.header.stamp = ros::Time::now();
-  odom_trans.header.frame_id = "odom";
-  odom_trans.child_frame_id = "base_link";
+  // //first, we'll publish the transform over tf
+  // geometry_msgs::TransformStamped odom_trans;
+  // odom_trans.header.stamp = ros::Time::now();
+  // odom_trans.header.frame_id = "odom";
+  // odom_trans.child_frame_id = "base_link";
 
-  odom_trans.transform.translation.x = odom.pose.pose.position.x;
-  odom_trans.transform.translation.y = odom.pose.pose.position.y;
-  odom_trans.transform.translation.z = 0.0;
-  odom_trans.transform.rotation = odom_quat;
+  // odom_trans.transform.translation.x = odom.pose.pose.position.x;
+  // odom_trans.transform.translation.y = odom.pose.pose.position.y;
+  // odom_trans.transform.translation.z = 0.0;
+  // odom_trans.transform.rotation = odom_quat;
 
-  //send the transform
-  tf_broadcaster.sendTransform(odom_trans);
+  // //send the transform
+  // tf_broadcaster.sendTransform(odom_trans);
 
 
-  //next, we'll publish the odometry message over ROS
-  odom.header.frame_id = "odom";
-  odom.child_frame_id = "base_link";
-  //publish the message
-  odom_pub.publish(odom);
+  // //next, we'll publish the odometry message over ROS
+  // odom.header.frame_id = "odom";
+  // odom.child_frame_id = "base_link";
+  // //publish the message
+  // odom_pub.publish(odom);
 
 }
 
