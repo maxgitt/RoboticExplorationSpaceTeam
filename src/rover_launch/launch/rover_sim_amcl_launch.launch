@@ -19,6 +19,13 @@
 	<include file="$(find rover_navigation)/launch/robot_localization.launch"/>
 	<include file="$(find rover_navigation)/launch/amcl.launch"/>
 	<include file="$(find rover_navigation)/launch/move_base.launch"/> 	
+
+	<!--
+	<node name="map_server" pkg="map_server" type="map_server" args="$(find rover_navigation)/map/rmc_map.yaml"/>
+	<node pkg="rover_navigation" type="odometry_publisher" name="odom_node" output="screen"/>
+	<include file="$(find turtlebot_navigation)/launch/amcl_demo.launch"/>
+
+	-->
 	<include file="$(find rover_gazebo)/launch/rover_world.launch"/>
  	<include file="$(find rover_description)/launch/rover_rviz.launch"/>
 
