@@ -150,7 +150,7 @@ URGCWrapper::~URGCWrapper(){
 // Takes the running avg of window size
 // This normalizes/smooths intensity noise
 // Shoud be tested with different window sizes
-vector<int> URGCWrapper::smooth_intensities(float32 intensity_steps[], int num_steps, int window_size) {
+vector<int> URGCWrapper::smooth_intensities(float intensity_steps[], int num_steps, int window_size) {
     if (window_size % 2 == 0) {
         window_size += 1;
     }
@@ -308,7 +308,7 @@ vector<int> URGCWrapper::find_flag_ends(vector<int>& edge_indices, int gap_epsil
 // Uses trig to compute the coordinates of the center of the rover,
 //      relative to the center of the sieve at (0,0)
 // Returns (x,y) coordinate vector of the rover
-vector<double> URGCWrapper::get_position(vector<int>& flag_ends, float32 distance_steps[]) {
+vector<double> URGCWrapper::get_position(vector<int>& flag_ends, float distance_steps[]) {
 
   double dist_left_end = distance_steps[flag_ends[0]];
   double dist_right_end = distance_steps[flag_ends[1]];
@@ -333,7 +333,7 @@ vector<double> URGCWrapper::get_position(vector<int>& flag_ends, float32 distanc
 // Postive value means facing left of center
 // Negative value means facing right of center
 // Returns updated pose vector by appending rover's orientation to its position
-double URGCWrapper::get_orientation(vector<int>& flag_ends, float32 distance_steps[]) {
+double URGCWrapper::get_orientation(vector<int>& flag_ends, float distance_steps[]) {
 
   if (flag_ends[0] == -99999) {
     return -99999;

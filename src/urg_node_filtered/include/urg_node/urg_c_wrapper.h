@@ -47,6 +47,10 @@
 #include <urg_c/urg_sensor.h>
 #include <urg_c/urg_utils.h>
 
+ #include <tf/transform_listener.h>
+
+using namespace std;
+
 namespace urg_node
 { 
   class URGCWrapper
@@ -127,14 +131,14 @@ namespace urg_node
     // Takes the running avg of window size
     // This normalizes/smooths intensity noise
     // Shoud be tested with different window sizes
-    void smooth_intensities(int intensity_steps[], int num_steps, int window_size);
+    vector<int> smooth_intensities(float intensity_steps[], int num_steps, int window_size);
       
     // Samples 1-2N steps
     // Compares the average intensity of (1 to N) vs (N+1 to 2N)
     // Determines if avg intensity change was large enough
     // Returns: Step indices where intensity changes are above intensity delta threshold,
     //              these steps are labeled as edges, decreasing step edge indices are multiplied by -1
-    vector<int> determine_intensity_edges(int intensity_steps[], int num_steps, int window_size, int intensity_delta_threshold);
+    vector<int> determine_intensity_edges(vector<int> intensity_steps, int num_steps, int window_size, int intensity_delta_threshold);
     
     // Maintains temporary gap length in steps between edges
     // Allows for +-N variability
@@ -147,7 +151,7 @@ namespace urg_node
     // Uses trig to compute the coordinates of the center of the rover,
     //      relative to the center of the sieve at (0,0)
     // Returns (x,y) coordinate vector of the rover
-    vector<double> get_position(vector<int>& flag_ends, float32 distance_steps[]);
+    vector<double> get_position(vector<int>& flag_ends, float distance_steps[]);
 
     // Takes in current rover (x,y) coordinates and step numbers of the flag ends
     // Uses width of flag, dist to left end, dist to right end, and
@@ -157,7 +161,7 @@ namespace urg_node
     // Postive value means facing left of center
     // Negative value means facing right of center
     // Returns updated pose vector by appending rover's orientation to its position
-    double get_orientation(vector<int>& flag_ends, float32 distance_steps[]);
+    double get_orientation(vector<int>& flag_ends, float distance_steps[]);
 
     // Pose consists of the rover's position and orientation
     // Publishes a vector containing the rover's pose (x,y,theta)
