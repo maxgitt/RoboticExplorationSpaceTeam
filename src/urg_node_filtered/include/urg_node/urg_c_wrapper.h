@@ -38,6 +38,9 @@
 #include <sstream>
 #include <limits>
 
+#include <cmath>
+#include <vector>
+
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/MultiEchoLaserScan.h>
 
@@ -139,10 +142,33 @@ namespace urg_node
     // Updates temporary gap length as most recent gap between edges
     // Resets gap length if new gap length is farther then (temp_gap+-N)
     // Returns once k sequential gaps are found without updating gap length
-    vector<int> find_flag_ends(vector<int>& edge_indices, );
+    vector<int> find_flag_ends(vector<int>& edge_indices);
+
+    // Takes in steps corresponding to flag ends, and array of distance values for each step
+    // Uses trig to compute the coordinates of the center of the rover,
+    //      relative to the center of the sieve at (0,0)
+    // Returns (x,y) coordinate vector of the rover
+    vector<int> get_position(vector<int>& flag_ends, int distance_steps[]);
+
+    // Takes in current rover (x,y) coordinates and step numbers of the flag ends
+    // Uses width of flag, dist to left end, dist to right end, and
+    //      the angle between the 540th (or real center) step vs the step corresponding 
+    //      to the flag center
+    // Orientation of 0 means rover is perpendicular to sieve
+    // Postive value means 
+    // Returns updated pose vector by appending rover's orientation to its position
+    vector<int> append_orientation(vector<int>& position, vector<int>& flag_ends);
+
+    // Pose consists of the rover's position and orientation
+    // Publishes a vector containing the rover's pose (x,y,theta)
+    // 
+    void publish_pose(vector<int>& pose)
+
+    // Calculate the step closest to the center of the flag 
+    int calc_flag_center();
     
     // Averages an array of intensities
-    // Returns if avg is within bounds
+    // Returns true if avg is within bounds
     bool intensity_inrange(int low, int high, int arr[]);
       
     // THIS FUNCTION SHOULD BE USED IN DETERMINE_INTENSITY_EDGES for Sampling

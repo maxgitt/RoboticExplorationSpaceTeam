@@ -260,7 +260,7 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_e
       || edge_indices[i] < 0 && edge_indices[i+1] > 0) {
       // Valid intensity change 
       if ((abs(edge_indices[i+1]) - abs(edge_indices[i])) < (gap_length + gap_epsilon)
-        && (abs(edge_indices[i+1]) - abs(edge_indices[i])) > (gap_length - gap_epsilon) {
+        && (abs(edge_indices[i+1]) - abs(edge_indices[i])) > (gap_length - gap_epsilon)) {
           // Valid gap_length
           // Update gap_length
           gap_length = abs(edge_indices[i+1]) - abs(edge_indices[i]);
@@ -294,6 +294,43 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_e
   }
   return flag_ends;
 }
+
+// Takes in steps corresponding to flag ends, and array of distance values for each step
+// Uses trig to compute the coordinates of the center of the rover,
+//      relative to the center of the sieve at (0,0)
+// Returns (x,y) coordinate vector of the rover
+vector<double> get_position(vector<int>& flag_ends, int distance_steps[]) {
+
+  double dist_left_end = distance_steps[flag_ends[0]];
+  double dist_right_end = distance_steps[flag_ends[1]];
+
+  vector<double> coordinates(2);
+
+  coordinates.push_back((pow(dist_right_end, 2) - pow(dist_left_end, 2) + 6.111) / 3.15);
+  coordinates.push_back(sqrt(-2560000*pow(dist_left_end,4) + 3200*pow(dist_left_end,2)*(1600*pow(dist_right_end,2) + 3969) - pow((3969 - 1600*pow(dist_right_end,2)),2))/5040);
+  return coordinates;
+}
+
+// Takes in current rover (x,y) coordinates and step numbers of the flag ends
+// Uses width of flag, dist to left end, dist to right end, and
+//      the angle between the 540th (or real center) step vs the step corresponding 
+//      to the flag center
+// Orientation of 0 means rover is perpendicular to sieve
+// Postive value means 
+// Returns updated pose vector by appending rover's orientation to its position
+vector<double> get_orientation(vector<int>& position, vector<int>& flag_ends, int distance_steps[]) {
+
+  //
+  
+}
+
+// Pose consists of the rover's position and orientation
+// Publishes a vector containing the rover's pose (x,y,theta)
+// 
+void publish_pose(vector<double>& pose)
+
+// Calculate the step closest to the center of the flag 
+int calc_flag_center();
 
 bool URGCWrapper::intensity_inrange(int low, int high, int arr[], int length) {
     int sum = 0;
