@@ -222,6 +222,9 @@ int main(int argc, char **argv)
 
   // Set up publishers and diagnostics updaters, we only need one
   ros::Publisher laser_pub;
+  ros::Publisher pose_pub;
+  pose_pub = n.advertise<geometry_msgs::PoseWithCovarianceStamped>("/back_laser_pose", 50);
+  tf::TransformBroadcaster tf_broadcaster;
   laser_proc::LaserPublisher echoes_pub;
 
   close_diagnostics_ = true;
@@ -355,7 +358,8 @@ int main(int argc, char **argv)
 		        laser_pub.publish(msg);
 		        laser_freq_->tick();
 
-            // Start flag-based pose estimation
+            // Start flag-based pose estimation 
+
             int smooth_intensities_window_size = 5; // filter size
             int det_int_edges_window_size = 4; // how many samples on each side to avg to look for an edge
             int det_int_edges_delta_threshold = 600; // how large of a jump for an edge
@@ -366,12 +370,16 @@ int main(int argc, char **argv)
             vector<int> flag_ends = find_flag_ends(detected_edges, find_flag_ends_gap_epsilon, find_flag_ends_exp_edges);
             vector<double> pose = get_position(flag_ends, msg->ranges);
 
-            pose.push_back(get_orientation(flag_ends, msg->ranges));
+            pose.push_back(get_orientation(pose, flag_ends, msg->ranges));
 
-            ros::Publisher pose_odom;
-            pose_odom = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/back_laser_pose", 50);
-            tf::TransformBroadcaster tf_broadcaster;
-            publish_pose(pose, tf_broadcaster);
+            pose_pub.publish(publish_pose(pose));
+
+  	    tf_broadcaster.sendTransform(
+    		tf::StampedTransform(
+      			tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.2, 0.0, 0.0)),
+        			ros::Time::now(),"back_laser_pose", "map"));
+
+	    // End
 		      } else {
 		        ROS_WARN_THROTTLE(10.0, "Could not grab single echo scan.");
 		        device_status_ = urg_->getSensorStatus();

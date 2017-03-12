@@ -48,6 +48,8 @@
 #include <urg_c/urg_utils.h>
 
  #include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 using namespace std;
 
@@ -128,57 +130,7 @@ namespace urg_node
 
     bool grabScan(const sensor_msgs::MultiEchoLaserScanPtr& msg);
 
-    // Takes the running avg of window size
-    // This normalizes/smooths intensity noise
-    // Shoud be tested with different window sizes
-    vector<int> smooth_intensities(float intensity_steps[], int num_steps, int window_size);
-      
-    // Samples 1-2N steps
-    // Compares the average intensity of (1 to N) vs (N+1 to 2N)
-    // Determines if avg intensity change was large enough
-    // Returns: Step indices where intensity changes are above intensity delta threshold,
-    //              these steps are labeled as edges, decreasing step edge indices are multiplied by -1
-    vector<int> determine_intensity_edges(vector<int> intensity_steps, int num_steps, int window_size, int intensity_delta_threshold);
-    
-    // Maintains temporary gap length in steps between edges
-    // Allows for +-N variability
-    // Updates temporary gap length as most recent gap between edges
-    // Resets gap length if new gap length is farther then (temp_gap+-N)
-    // Returns once k sequential gaps are found without updating gap length
-    vector<int> find_flag_ends(vector<int>& edge_indices);
-
-    // Takes in steps corresponding to flag ends, and array of distance values for each step
-    // Uses trig to compute the coordinates of the center of the rover,
-    //      relative to the center of the sieve at (0,0)
-    // Returns (x,y) coordinate vector of the rover
-    vector<double> get_position(vector<int>& flag_ends, float distance_steps[]);
-
-    // Takes in current rover (x,y) coordinates and step numbers of the flag ends
-    // Uses width of flag, dist to left end, dist to right end, and
-    //      the angle between the 540th (or real center) step vs the step corresponding 
-    //      to the flag center
-    // Orientation of 0 means rover is perpendicular to sieve
-    // Postive value means facing left of center
-    // Negative value means facing right of center
-    // Returns updated pose vector by appending rover's orientation to its position
-    double get_orientation(vector<int>& flag_ends, float distance_steps[]);
-
-    // Pose consists of the rover's position and orientation
-    // Publishes a vector containing the rover's pose (x,y,theta)
-    void publish_pose(vector<double>& pose_in, tf::TransformBroadcaster tf_broadcaster);
-
  private:
-    // Calculate the distance to the center of the flag 
-    double get_dist_to_flag_center(vector<double> position);
-
-    double get_angle_left_to_center(double dist_to_flag_center, vector<int>& flag_ends, double dist_to_left_flag_end);
-
-    // Averages an array of intensities
-    // Returns true if avg is within bounds
-    bool intensity_inrange(int low, int high, int arr[]);
-      
-    // THIS FUNCTION SHOULD BE USED IN DETERMINE_INTENSITY_EDGES for Sampling
-    bool intensity_increases(int arr1[], int arr2[], int length);
       
     void initialize(bool& using_intensity, bool& using_multiecho);
 
@@ -219,5 +171,49 @@ namespace urg_node
   
   
 }; // urg_node
+
+// Calculate the distance to the center of the flag 
+double get_dist_to_flag_center(vector<double> position);
+
+double get_angle_left_to_center(double dist_to_flag_center, vector<int>& flag_ends, double dist_to_left_flag_end);
+
+// Takes the running avg of window size
+// This normalizes/smooths intensity noise
+// Shoud be tested with different window sizes
+vector<int> smooth_intensities(vector<float> intensity_steps, int num_steps, int window_size);
+
+// Samples 1-2N steps
+// Compares the average intensity of (1 to N) vs (N+1 to 2N)
+// Determines if avg intensity change was large enough
+// Returns: Step indices where intensity changes are above intensity delta threshold,
+//              these steps are labeled as edges, decreasing step edge indices are multiplied by -1
+vector<int> determine_intensity_edges(vector<int> intensity_steps, int num_steps, int window_size, int intensity_delta_threshold);
+
+// Maintains temporary gap length in steps between edges
+// Allows for +-N variability
+// Updates temporary gap length as most recent gap between edges
+// Resets gap length if new gap length is farther then (temp_gap+-N)
+// Returns once k sequential gaps are found without updating gap length
+vector<int> find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_edges);
+
+// Takes in steps corresponding to flag ends, and array of distance values for each step
+// Uses trig to compute the coordinates of the center of the rover,
+//      relative to the center of the sieve at (0,0)
+// Returns (x,y) coordinate vector of the rover
+vector<double> get_position(vector<int>& flag_ends, vector<float> distance_steps);
+
+// Takes in current rover (x,y) coordinates and step numbers of the flag ends
+// Uses width of flag, dist to left end, dist to right end, and
+//      the angle between the 540th (or real center) step vs the step corresponding 
+//      to the flag center
+// Orientation of 0 means rover is perpendicular to sieve
+// Postive value means facing left of center
+// Negative value means facing right of center
+// Returns updated pose vector by appending rover's orientation to its position
+double get_orientation(vector<double>& position, vector<int>& flag_ends, vector<float> distance_steps);
+
+// Pose consists of the rover's position and orientation
+// Publishes a vector containing the rover's pose (x,y,theta)
+geometry_msgs::PoseWithCovarianceStamped publish_pose(vector<double>& pose_in);
 
 #endif

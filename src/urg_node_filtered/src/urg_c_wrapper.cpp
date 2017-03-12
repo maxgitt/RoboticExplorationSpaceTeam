@@ -34,6 +34,7 @@
 #include <urg_node/urg_c_wrapper.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
+
 using namespace urg_node;
 using namespace std;
 
@@ -145,271 +146,6 @@ void URGCWrapper::stop(){
 URGCWrapper::~URGCWrapper(){
   stop();
   urg_close(&urg_);
-}
-
-// Takes the running avg of window size
-// This normalizes/smooths intensity noise
-// Shoud be tested with different window sizes
-vector<int> URGCWrapper::smooth_intensities(float intensity_steps[], int num_steps, int window_size) {
-    if (window_size % 2 == 0) {
-        window_size += 1;
-    }
-    vector<int> smoothed_intensities(num_steps);
-    if (window_size > num_steps) {
-      smoothed_intensities[0] = -99999;
-      return smoothed_intensities;
-    }
-    int buf = (window_size/2);
-    int running_sum = 0;
-    
-    //setup first window
-    for (int i = 0; i < buf+1; ++i) {
-        running_sum += intensity_steps[i];
-    }
-    smoothed_intensities[0] = running_sum/(buf+1);
-    
-    //Calculate remaining averages ignoring values outside of step range
-    for (int i = 1; i < num_steps; ++i) {
-        if (i <= buf) {
-            running_sum += intensity_steps[i+buf];
-            smoothed_intensities[i] = running_sum/(i+buf+1);
-        }
-        else if( i >= (num_steps-buf)) {
-            running_sum -= intensity_steps[i-buf-1];
-            smoothed_intensities[i] = running_sum/(num_steps-i+buf);
-        }
-        else {
-            running_sum += intensity_steps[i+buf];
-            running_sum -= intensity_steps[i-buf-1];
-            smoothed_intensities[i] = running_sum/(window_size);
-        }
-    }
-    
-    return smoothed_intensities;
-}
-
-// Samples 1-2N steps
-// Compares the average intensity of (1 to N) vs (N+1 to 2N)
-// Determines if avg intensity change was large enough
-// Returns: Step indices where intensity changes are above intensity delta threshold,
-//              these steps are labeled as edges, decreasing step edge indices are multiplied by -1
-vector<int> URGCWrapper::determine_intensity_edges(vector<int> intensity_steps, int num_steps, int window_size, int intensity_delta_threshold) {
-  // Edges are defined as the step after an intensity jump
-
-  // If too many edges -- increase threshold
-  // If not enough edges -- consider taking differences between non-adjacent samples aka account for climbing (or remove smoothing function)
-
-  vector<int> intensity_edges;
-  if (intensity_steps == -99999) {
-    intensity_edges.push_back(-99999);
-    return intensity_edges;
-  }
-
-  for (int i = 0; i < num_steps-(window_size*2); ++i) {
-    
-    int sample_sum_1 = 0;
-    int sample_sum_2 = 0;
-
-    // Calculate sum of sample 1 and sample 2
-    for (int j = 0; j < window_size; ++j) {
-      sample_sum_1 += intensity_steps[i+j];
-      sample_sum_2 += intensity_steps[i+window_size+j];
-    }
-
-    // Determine averages
-    int sample_avg_1 = sample_sum_1/window_size;
-    int sample_avg_2 = sample_sum_2/window_size;
-  
-    // Determine if function increased or decreased beyond threshold
-    int intensity_delta = sample_avg_2 - sample_avg_1;
-    if (abs(intensity_delta) > intensity_delta_threshold) {
-      // Intensity is increasing
-      if (intensity_delta > 0) {
-        // Select first step of second sample as edge index
-        intensity_edges.push_back(i+window_size);
-      }
-      // Intensity is decreasing
-      else {
-        // Select first step of second sample as edge index
-        intensity_edges.push_back(-(i+window_size));
-      }
-    }
-  }
-  return intensity_edges;
-}
-
-// Maintains temporary gap length in steps between edges
-// Allows for +-N variability
-// Updates temporary gap length as most recent gap between edges
-// Resets gap length if new gap length is farther then (temp_gap+-N)
-// Checks once k sequential gaps are found without updating gap length
-// Assert that expected oscillation of edge intensity occurs
-// Returns left and right flag end steps in that order
-vector<int> URGCWrapper::find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_edges) {
-
-  vector<int> flag_ends(2);
-  if (edge_indices.size() < 2 ) {
-    flag_ends.push_back(-99999);
-    return flag_ends;
-  }
-
-  
-  vector<int> flag_pattern_edges;
-  // Initialze found edges and push first edge into edge_indices
-  int found_edges = 1;
-  flag_pattern_edges.push_back(abs(edge_indices[0]));
-
-  // Initialize gap length to #steps (aka distance) between first two edges
-  int gap_length = abs(edge_indices[1]) - abs(edge_indices[0]);
-
-  // Count useful edges
-  for (int i = 0; i < edge_indices.size()-1 ; ++i) {
-    // High->Low or Low->High intensity change 
-    if (edge_indices[i] > 0 && edge_indices[i+1] < 0
-      || edge_indices[i] < 0 && edge_indices[i+1] > 0) {
-      // Valid intensity change 
-      if ((abs(edge_indices[i+1]) - abs(edge_indices[i])) < (gap_length + gap_epsilon)
-        && (abs(edge_indices[i+1]) - abs(edge_indices[i])) > (gap_length - gap_epsilon)) {
-          // Valid gap_length
-          // Update gap_length
-          gap_length = abs(edge_indices[i+1]) - abs(edge_indices[i]);
-          // Update found_edges and push back validated edge
-          found_edges++;
-          flag_pattern_edges.push_back(abs(edge_indices[i+1]));
-      }
-      // Gap_length was too large or small 
-      else {
-        // Reset to initial values
-        found_edges = 1;
-        flag_pattern_edges.clear();
-        flag_pattern_edges.push_back(abs(edge_indices[i+1]));
-      }
-    }
-    // Low->low or high->high intensity change
-    else {
-        // Reset to initial values
-        found_edges = 1;
-        flag_pattern_edges.clear();
-        flag_pattern_edges.push_back(abs(edge_indices[i+1]));
-    }
-  }
-
-  if (found_edges != exp_edges) {
-    flag_ends.push_back(-99999);
-  }
-  else {
-    flag_ends.push_back(flag_pattern_edges[0]);
-    flag_ends.push_back(flag_pattern_edges[exp_edges]);
-  }
-  return flag_ends;
-}
-
-// Takes in steps corresponding to flag ends, and array of distance values for each step
-// Uses trig to compute the coordinates of the center of the rover,
-//      relative to the center of the sieve at (0,0)
-// Returns (x,y) coordinate vector of the rover
-vector<double> URGCWrapper::get_position(vector<int>& flag_ends, float distance_steps[]) {
-
-  double dist_left_end = distance_steps[flag_ends[0]];
-  double dist_right_end = distance_steps[flag_ends[1]];
-  vector<double> coordinates(2);
-
-  if (flag_ends[0] == -99999) {
-    coordinates.push_back(-99999);
-    coordinates.push_back(-99999);
-    return coordinates;
-  }
-
-  coordinates.push_back((pow(dist_right_end, 2) - pow(dist_left_end, 2) + 6.111) / 3.15);
-  coordinates.push_back(sqrt(-2560000*pow(dist_left_end,4) + 3200*pow(dist_left_end,2)*(1600*pow(dist_right_end,2) + 3969) - pow((3969 - 1600*pow(dist_right_end,2)),2))/5040);
-  return coordinates;
-}
-
-// Takes in current rover (x,y) coordinates and step numbers of the flag ends
-// Uses width of flag, dist to left end, dist to right end, and
-//      the angle between the 540th (or real center) step vs the step corresponding 
-//      to the flag center
-// Orientation of 0 means rover is perpendicular to sieve
-// Postive value means facing left of center
-// Negative value means facing right of center
-// Returns updated pose vector by appending rover's orientation to its position
-double URGCWrapper::get_orientation(vector<int>& flag_ends, float distance_steps[]) {
-
-  if (flag_ends[0] == -99999) {
-    return -99999;
-  }
-  double angle_increment = 0.25;
-  double angle_to_left = flag_ends[0]*angle_increment;
-  double dist_to_flag_center = get_dist_to_flag_center(position);
-  double angle_left_to_center = get_angle_left_to_center(dist_to_flag_center, flag_ends, distance_steps[flag_ends[0]]);
-
-  // theta_c = theta_l + theta_lc
-  double angle_to_center = angle_to_left + angle_left_to_center;
-  // orientation = theta_c - 135 degrees
-  return angle_to_center - 135;
-
-}
-
-// Calculate the distance to the center of the flag 
-double URGCWrapper::get_dist_to_flag_center(vector<double> position) {
-
-  double x_flag_center = 1.94;
-  // dist_center^2 = (x^2 - 1.94) - y^2
-  return sqrt(pow((position[0] - x_flag_center)),2) - pow(position[1],2);
-}
-
-double URGCWrapper::get_angle_left_to_center(double dist_to_flag_center, vector<int>& flag_ends, double dist_to_left_flag_end) {
-
-  double half_sieve_length = .7875;
-
-  //c^2 = a^2 + b^2 -2abcos(angle_left_to_center);
-  //c: half of flag length (1.575/2) = .7875
-  //b: dist_to_flag_center
-  //a: dist_to_left_flag_end
-
-  return acos((pow(dist_to_left_flag_end,2) + pow(dist_to_flag_center,2) - pow(half_sieve_length,2))/ (2*dist_to_flag_center*dist_to_left_flag_end));
-}
-
-void URGCWrapper::publish_pose(vector<double>& pose_in, tf::TransformBroadcaster tf_broadcaster) {
-  geometry_msgs::PoseWithCovarianceStamped pose_out;
-  pose_out.header.frame_id = 'back_laser_pose';
-  pose_out.pose.position.x = pose_in[0];
-  pose_out.pose.position.y = pose_in[1];
-  pose_out.pose.position.z = 0;
-  pose_out.pose.orientation.x = 0;
-  pose_out.pose.orientation.y = 0;
-  pose_out.pose.orientation.z = pose_in[2];
-  pose_out.pose.orientation.w = 0;
-  pose_pub.publish(pose_out);
-    
-  tf_broadcaster.sendTransform(
-    tf::StampedTransform(
-      tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.2, 0.0, 0.0)),
-        ros::Time::now(),"back_laser_pose", "map"));
-}
-
-
-bool URGCWrapper::intensity_inrange(int low, int high, int arr[], int length) {
-    int sum = 0;
-    for (int i = 0; i < length; ++i) {
-        sum += arr[i];
-    }
-    double avg = sum/length;
-    if (low <= avg && avg <= high) {
-        return true;
-    }
-    return false;
-}
-
-bool URGCWrapper::intensity_increases(int arr1[], int arr2[], int length){
-    int sum = 0;
-    for (int i = 0; i < length; ++i) {
-        sum = arr2[i] - arr1[i];
-    }
-    if (sum > 0) {
-        return true;
-    }
-    return false;
 }
 
 bool URGCWrapper::grabScan(const sensor_msgs::LaserScanPtr& msg){
@@ -834,4 +570,241 @@ ros::Duration URGCWrapper::getTimeStampOffset(size_t num_measurements){
   // Sort vector using nth_element (partially sorts up to the median index)
   std::nth_element(time_offsets.begin(), time_offsets.begin() + time_offsets.size()/2, time_offsets.end());
   return time_offsets[time_offsets.size()/2];
+}
+
+// Takes the running avg of window size
+// This normalizes/smooths intensity noise
+// Shoud be tested with different window sizes
+vector<int> smooth_intensities(vector<float> intensity_steps, int num_steps, int window_size) {
+    if (window_size % 2 == 0) {
+        window_size += 1;
+    }
+    vector<int> smoothed_intensities(num_steps);
+    if (window_size > num_steps) {
+      smoothed_intensities[0] = -99999;
+      return smoothed_intensities;
+    }
+    int buf = (window_size/2);
+    int running_sum = 0;
+    
+    //setup first window
+    for (int i = 0; i < buf+1; ++i) {
+        running_sum += intensity_steps[i];
+    }
+    smoothed_intensities[0] = running_sum/(buf+1);
+    
+    //Calculate remaining averages ignoring values outside of step range
+    for (int i = 1; i < num_steps; ++i) {
+        if (i <= buf) {
+            running_sum += intensity_steps[i+buf];
+            smoothed_intensities[i] = running_sum/(i+buf+1);
+        }
+        else if( i >= (num_steps-buf)) {
+            running_sum -= intensity_steps[i-buf-1];
+            smoothed_intensities[i] = running_sum/(num_steps-i+buf);
+        }
+        else {
+            running_sum += intensity_steps[i+buf];
+            running_sum -= intensity_steps[i-buf-1];
+            smoothed_intensities[i] = running_sum/(window_size);
+        }
+    }
+    
+    return smoothed_intensities;
+    vector<int> blah(2,0);
+    return blah;
+}
+
+// Samples 1-2N steps
+// Compares the average intensity of (1 to N) vs (N+1 to 2N)
+// Determines if avg intensity change was large enough
+// Returns: Step indices where intensity changes are above intensity delta threshold,
+//              these steps are labeled as edges, decreasing step edge indices are multiplied by -1
+vector<int> determine_intensity_edges(vector<int> intensity_steps, int num_steps, int window_size, int intensity_delta_threshold) {
+  // Edges are defined as the step after an intensity jump
+
+  // If too many edges -- increase threshold
+  // If not enough edges -- consider taking differences between non-adjacent samples aka account for climbing (or remove smoothing function)
+
+  vector<int> intensity_edges;
+  if (intensity_steps[0] == -99999) {
+    intensity_edges.push_back(-99999);
+    return intensity_edges;
+  }
+
+  for (int i = 0; i < num_steps-(window_size*2); ++i) {
+    
+    int sample_sum_1 = 0;
+    int sample_sum_2 = 0;
+
+    // Calculate sum of sample 1 and sample 2
+    for (int j = 0; j < window_size; ++j) {
+      sample_sum_1 += intensity_steps[i+j];
+      sample_sum_2 += intensity_steps[i+window_size+j];
+    }
+
+    // Determine averages
+    int sample_avg_1 = sample_sum_1/window_size;
+    int sample_avg_2 = sample_sum_2/window_size;
+  
+    // Determine if function increased or decreased beyond threshold
+    int intensity_delta = sample_avg_2 - sample_avg_1;
+    if (abs(intensity_delta) > intensity_delta_threshold) {
+      // Intensity is increasing
+      if (intensity_delta > 0) {
+        // Select first step of second sample as edge index
+        intensity_edges.push_back(i+window_size);
+      }
+      // Intensity is decreasing
+      else {
+        // Select first step of second sample as edge index
+        intensity_edges.push_back(-(i+window_size));
+      }
+    }
+  }
+  return intensity_edges;
+}
+
+// Maintains temporary gap length in steps between edges
+// Allows for +-N variability
+// Updates temporary gap length as most recent gap between edges
+// Resets gap length if new gap length is farther then (temp_gap+-N)
+// Checks once k sequential gaps are found without updating gap length
+// Assert that expected oscillation of edge intensity occurs
+// Returns left and right flag end steps in that order
+vector<int> find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_edges) {
+
+  vector<int> flag_ends(2);
+  if (edge_indices.size() < 2 ) {
+    flag_ends.push_back(-99999);
+    return flag_ends;
+  }
+
+  
+  vector<int> flag_pattern_edges;
+  // Initialze found edges and push first edge into edge_indices
+  int found_edges = 1;
+  flag_pattern_edges.push_back(abs(edge_indices[0]));
+
+  // Initialize gap length to #steps (aka distance) between first two edges
+  int gap_length = abs(edge_indices[1]) - abs(edge_indices[0]);
+
+  // Count useful edges
+  for (int i = 0; i < edge_indices.size()-1 ; ++i) {
+    // High->Low or Low->High intensity change 
+    if (edge_indices[i] > 0 && edge_indices[i+1] < 0
+      || edge_indices[i] < 0 && edge_indices[i+1] > 0) {
+      // Valid intensity change 
+      if ((abs(edge_indices[i+1]) - abs(edge_indices[i])) < (gap_length + gap_epsilon)
+        && (abs(edge_indices[i+1]) - abs(edge_indices[i])) > (gap_length - gap_epsilon)) {
+          // Valid gap_length
+          // Update gap_length
+          gap_length = abs(edge_indices[i+1]) - abs(edge_indices[i]);
+          // Update found_edges and push back validated edge
+          found_edges++;
+          flag_pattern_edges.push_back(abs(edge_indices[i+1]));
+      }
+      // Gap_length was too large or small 
+      else {
+        // Reset to initial values
+        found_edges = 1;
+        flag_pattern_edges.clear();
+        flag_pattern_edges.push_back(abs(edge_indices[i+1]));
+      }
+    }
+    // Low->low or high->high intensity change
+    else {
+        // Reset to initial values
+        found_edges = 1;
+        flag_pattern_edges.clear();
+        flag_pattern_edges.push_back(abs(edge_indices[i+1]));
+    }
+  }
+
+  if (found_edges != exp_edges) {
+    flag_ends.push_back(-99999);
+  }
+  else {
+    flag_ends.push_back(flag_pattern_edges[0]);
+    flag_ends.push_back(flag_pattern_edges[exp_edges]);
+  }
+  return flag_ends;
+}
+
+// Takes in steps corresponding to flag ends, and array of distance values for each step
+// Uses trig to compute the coordinates of the center of the rover,
+//      relative to the center of the sieve at (0,0)
+// Returns (x,y) coordinate vector of the rover
+vector<double> get_position(vector<int>& flag_ends, vector<float> distance_steps) {
+
+  double dist_left_end = distance_steps[flag_ends[0]];
+  double dist_right_end = distance_steps[flag_ends[1]];
+  vector<double> coordinates(2);
+
+  if (flag_ends[0] == -99999) {
+    coordinates.push_back(-99999);
+    coordinates.push_back(-99999);
+    return coordinates;
+  }
+
+  coordinates.push_back((pow(dist_right_end, 2) - pow(dist_left_end, 2) + 6.111) / 3.15);
+  coordinates.push_back(sqrt(-2560000*pow(dist_left_end,4) + 3200*pow(dist_left_end,2)*(1600*pow(dist_right_end,2) + 3969) - pow((3969 - 1600*pow(dist_right_end,2)),2))/5040);
+  return coordinates;
+}
+
+// Takes in current rover (x,y) coordinates and step numbers of the flag ends
+// Uses width of flag, dist to left end, dist to right end, and
+//      the angle between the 540th (or real center) step vs the step corresponding 
+//      to the flag center
+// Orientation of 0 means rover is perpendicular to sieve
+// Postive value means facing left of center
+// Negative value means facing right of center
+// Returns updated pose vector by appending rover's orientation to its position
+double get_orientation(vector<double>& position, vector<int>& flag_ends, vector<float> distance_steps) {
+
+  if (flag_ends[0] == -99999) {
+    return -99999;
+  }
+  double angle_increment = 0.25;
+  double angle_to_left = flag_ends[0]*angle_increment;
+  double dist_to_flag_center = get_dist_to_flag_center(position);
+  double angle_left_to_center = get_angle_left_to_center(dist_to_flag_center, flag_ends, distance_steps[flag_ends[0]]);
+
+  // theta_c = theta_l + theta_lc
+  double angle_to_center = angle_to_left + angle_left_to_center;
+  // orientation = theta_c - 135 degrees
+  return angle_to_center - 135;
+
+}
+
+// Calculate the distance to the center of the flag 
+double get_dist_to_flag_center(vector<double> position) {
+
+  double x_flag_center = 1.94;
+  // dist_center^2 = (x^2 - 1.94) - y^2
+  return sqrt(pow((position[0] - x_flag_center),2) - pow(position[1],2));
+}
+
+double get_angle_left_to_center(double dist_to_flag_center, vector<int>& flag_ends, double dist_to_left_flag_end) {
+
+  double half_sieve_length = .7875;
+
+  //c^2 = a^2 + b^2 -2abcos(angle_left_to_center);
+  //c: half of flag length (1.575/2) = .7875
+  //b: dist_to_flag_center
+  //a: dist_to_left_flag_end
+
+  return acos((pow(dist_to_left_flag_end,2) + pow(dist_to_flag_center,2) - pow(half_sieve_length,2))/ (2*dist_to_flag_center*dist_to_left_flag_end));
+}
+geometry_msgs::PoseWithCovarianceStamped publish_pose(vector<double>& pose_in) {
+  geometry_msgs::PoseWithCovarianceStamped pose_out;
+  pose_out.header.frame_id = "back_laser_pose";
+  pose_out.pose.pose.position.x = pose_in[0];
+  pose_out.pose.pose.position.y = pose_in[1];
+  pose_out.pose.pose.position.z = 0;
+  pose_out.pose.pose.orientation.x = 0;
+  pose_out.pose.pose.orientation.y = 0;
+  pose_out.pose.pose.orientation.z = pose_in[2];
+  pose_out.pose.pose.orientation.w = 0;
+  return pose_out;
 }
