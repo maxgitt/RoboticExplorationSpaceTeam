@@ -37,7 +37,7 @@ double beaconPartialY(double r_1, double h_1, double k_1,
         const pair<double, double>& guess);
 
 ostream& operator<<(ostream& out, const BeaconEnv& b){
-    out << b.position.first << "  " << b.position.second << endl;
+    out << b.position.first << "    " << b.position.second;
     return out << "\n";
 }
 
@@ -52,10 +52,10 @@ istream& operator>>(istream& in, BeaconEnv& b){
         input.push_back( atof(token.c_str()) );
     }
     // responder is the 3rd data value which is not the one connected to a computer
-
     unsigned resp = input[2];
-    b.RoverBeacons[resp].updateReading(input[3], input[4]);
+    b.RoverBeacons[resp].updateReading(input[1], input[8]);
     b.positionUpdated = false;
+    b.getPosition();
 
         return in;
 }
@@ -110,10 +110,18 @@ BeaconEnv::updatePosition(){
 #endif
     for (; it != endIt; ++it) {
 #ifdef DEBUG
-        cout << "        " << "Sieve Beacon " << it->first << ": " << it->second.reading << "\n";
+        cout << "        " << "Rover Beacon " << it->first << ": " << it->second.reading << "\n";
 #endif
-        readings.push_back(it->second.reading);
-        offsets.push_back(it->second.offset);
+        auto inner_it = it->second.beaconReadings.begin();
+        auto endinner_it = it->second.beaconReadings.end();
+            
+        for (; inner_it != endinner_it; ++inner_it) {
+#ifdef DEBUG
+            cout << "        " << "Sieve Beacon " << inner_it->first << ": " << inner_it->second.reading << "\n";
+#endif        
+            readings.push_back(inner_it->second.reading);
+            offsets.push_back(inner_it->second.offset);
+        }
     }
 
     position = steepest_descent(readings,offsets, position);
@@ -140,7 +148,9 @@ BeaconEnv::steepest_descent(const vector<double>& readings,
     while ( error_diff > threshold) {
         old_pos = new_pos;
         x_deriv = calcPartialX(readings, offsets, new_pos);
+        cout << "x deriv = " << x_deriv;
         y_deriv = calcPartialY(readings, offsets, new_pos);
+        cout << "    y deriv = " << y_deriv << endl;
         new_pos.first = new_pos.first - x_deriv * 0.1;
         new_pos.second = new_pos.second - y_deriv * 0.1;
         past_error = current_error;
