@@ -180,14 +180,14 @@ double get_angle_left_to_center(double dist_to_flag_center, vector<int>& flag_en
 // Takes the running avg of window size
 // This normalizes/smooths intensity noise
 // Shoud be tested with different window sizes
-vector<int> smooth_intensities(vector<float> intensity_steps, int num_steps, int window_size);
+vector<float> smooth_intensities(vector<float> intensities, int num_steps, int window_size);
 
 // Samples 1-2N steps
 // Compares the average intensity of (1 to N) vs (N+1 to 2N)
 // Determines if avg intensity change was large enough
 // Returns: Step indices where intensity changes are above intensity delta threshold,
 //              these steps are labeled as edges, decreasing step edge indices are multiplied by -1
-vector<int> determine_intensity_edges(vector<int> intensity_steps, int num_steps, int window_size, int intensity_delta_threshold);
+vector<int> determine_intensity_edges(vector<float> intensities, int num_steps, int window_size, int intensity_delta_threshold);
 
 // Maintains temporary gap length in steps between edges
 // Allows for +-N variability

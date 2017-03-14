@@ -575,11 +575,11 @@ ros::Duration URGCWrapper::getTimeStampOffset(size_t num_measurements){
 // Takes the running avg of window size
 // This normalizes/smooths intensity noise
 // Shoud be tested with different window sizes
-vector<int> smooth_intensities(vector<float> intensity_steps, int num_steps, int window_size) {
+vector<float> smooth_intensities(vector<float> intensities, int num_steps, int window_size) {
     if (window_size % 2 == 0) {
         window_size += 1;
     }
-    vector<int> smoothed_intensities(num_steps);
+    vector<float> smoothed_intensities(num_steps);
     if (window_size > num_steps) {
       smoothed_intensities[0] = -99999;
       return smoothed_intensities;
@@ -589,30 +589,28 @@ vector<int> smooth_intensities(vector<float> intensity_steps, int num_steps, int
     
     //setup first window
     for (int i = 0; i < buf+1; ++i) {
-        running_sum += intensity_steps[i];
+        running_sum += intensities[i];
     }
     smoothed_intensities[0] = running_sum/(buf+1);
     
     //Calculate remaining averages ignoring values outside of step range
     for (int i = 1; i < num_steps; ++i) {
         if (i <= buf) {
-            running_sum += intensity_steps[i+buf];
+            running_sum += intensities[i+buf];
             smoothed_intensities[i] = running_sum/(i+buf+1);
         }
         else if( i >= (num_steps-buf)) {
-            running_sum -= intensity_steps[i-buf-1];
+            running_sum -= intensities[i-buf-1];
             smoothed_intensities[i] = running_sum/(num_steps-i+buf);
         }
         else {
-            running_sum += intensity_steps[i+buf];
-            running_sum -= intensity_steps[i-buf-1];
+            running_sum += intensities[i+buf];
+            running_sum -= intensities[i-buf-1];
             smoothed_intensities[i] = running_sum/(window_size);
         }
     }
     
     return smoothed_intensities;
-    vector<int> blah(2,0);
-    return blah;
 }
 
 // Samples 1-2N steps
@@ -620,14 +618,14 @@ vector<int> smooth_intensities(vector<float> intensity_steps, int num_steps, int
 // Determines if avg intensity change was large enough
 // Returns: Step indices where intensity changes are above intensity delta threshold,
 //              these steps are labeled as edges, decreasing step edge indices are multiplied by -1
-vector<int> determine_intensity_edges(vector<int> intensity_steps, int num_steps, int window_size, int intensity_delta_threshold) {
+vector<int> determine_intensity_edges(vector<float> intensities, int num_steps, int window_size, int intensity_delta_threshold) {
   // Edges are defined as the step after an intensity jump
 
   // If too many edges -- increase threshold
   // If not enough edges -- consider taking differences between non-adjacent samples aka account for climbing (or remove smoothing function)
 
   vector<int> intensity_edges;
-  if (intensity_steps[0] == -99999) {
+  if (intensities[0] == -99999) {
     intensity_edges.push_back(-99999);
     return intensity_edges;
   }
@@ -639,8 +637,8 @@ vector<int> determine_intensity_edges(vector<int> intensity_steps, int num_steps
 
     // Calculate sum of sample 1 and sample 2
     for (int j = 0; j < window_size; ++j) {
-      sample_sum_1 += intensity_steps[i+j];
-      sample_sum_2 += intensity_steps[i+window_size+j];
+      sample_sum_1 += intensities[i+j];
+      sample_sum_2 += intensities[i+window_size+j];
     }
 
     // Determine averages
