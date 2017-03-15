@@ -14,7 +14,7 @@ rosrun urg_node_filtered unit_test
 /* Flat Intensities, Small Window, Small Threshold */
 void test_no_edges_1() {
 
-	vector<float> intensities(1080, 600.0);
+	vector<float> intensities(NUM_STEPS, 600.0);
 	int window_size = 1;
 	int threshold_delta = 1;
 
