@@ -67,6 +67,7 @@ class BeaconEnv{
     }
     std::pair<double, double> position= std::pair<double, double>(3,0); 
     bool positionUpdated = false;
+    float orientation; // in degrees
 	friend std::ostream& operator<<(std::ostream& out, const BeaconEnv& b);
 	friend std::istream& operator>>(std::istream& in, BeaconEnv& b);
 	// <receiver id, sender id> ---------> <distance, last updated time>
@@ -75,7 +76,8 @@ class BeaconEnv{
     std::pair<double, double> getPosition();    
 
     void updatePosition();
-    void publish();
+    float getOrientation();
+    void updateOrientation();
     std::pair<double, double> steepest_descent(
         const std::vector<double>& readings, 
         const std::vector<std::pair<double,double>>& offsets,

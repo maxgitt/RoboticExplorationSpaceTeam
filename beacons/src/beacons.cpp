@@ -97,6 +97,20 @@ BeaconEnv::getPosition(){
     return position;
 }
 
+void BeaconEnv::updateOrientation(){
+    float dist = 2.0;
+    unsigned middle = 50;
+    float front_reading = RoverBeacons[64].beaconReadings[middle].reading;
+    float back_reading = RoverBeacons[5].beaconReadings[middle].reading;
+    float cos_val = pow(back_reading, 2) + pow(dist, 2) - pow(front_reading, 2);
+    cos_val /= (-2*back_reading * front_reading);
+    orientation =  M_PI - acos(cos_val);
+}
+
+float BeaconEnv::getOrientation(){
+return orientation;
+}
+
 void
 BeaconEnv::updatePosition(){
     vector<double> readings;
