@@ -43,6 +43,11 @@ target_link_libraries(urg_node urg_c_wrapper ${catkin_LIBRARIES})
 add_executable(getID src/getID.cpp)
 target_link_libraries(getID urg_c_wrapper ${catkin_LIBRARIES})
 
+
+add_executable(unit_test src/unit_test.cpp)
+add_dependencies(unit_test ${PROJECT_NAME}_gencfg)
+target_link_libraries(unit_test urg_c_wrapper ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############
@@ -86,3 +91,4 @@ install(PROGRAMS
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+

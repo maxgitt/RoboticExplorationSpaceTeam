@@ -365,7 +365,7 @@ int main(int argc, char **argv)
             int det_int_edges_delta_threshold = 600; // how large of a jump for an edge
             int find_flag_ends_gap_epsilon = 4; // # of steps between each edge to be a flag segment
             int find_flag_ends_exp_edges = 6; // # of expected edges 
-            vector<int> smoothed_steps = smooth_intensities(msg->intensities, 1080, smooth_intensities_window_size);
+            vector<float> smoothed_steps = smooth_intensities(msg->intensities, 1080, smooth_intensities_window_size);
             vector<int> detected_edges = determine_intensity_edges(smoothed_steps, 1080, det_int_edges_window_size, det_int_edges_delta_threshold);
             vector<int> flag_ends = find_flag_ends(detected_edges, find_flag_ends_gap_epsilon, find_flag_ends_exp_edges);
             vector<double> pose = get_position(flag_ends, msg->ranges);
