@@ -1,0 +1,52 @@
+# Obstacle Detection Through a Kinect
+
+1) [Data Acquisition] : Obtain point cloud
+	- Combine RGB color values with depth values if not done already
+	- Kinect depth range: 0.4m to 3.5m
+	- Kinect FPS: 30 FPS
+	- Resolution: 640 x 480 pixels
+	- Defined in reference frame of kinect - check if translation of reference frame necessary
+
+2) [Filtering] : Point Cloud Reduction
+	- Reduce points to improve algorithmic efficiency
+	- Possible this is unecessary due to computer power
+	- Downsample point cloud
+		- Voxel Grid Filter
+		- http://wiki.ros.org/pcl_ros/Tutorials/VoxelGrid%20filtering
+		- http://pointclouds.org/documentation/tutorials/voxel_grid.php
+	- Reduce pixel/image width 
+		- Passthrough Filter
+			- Reduce points greater than 1.5x the rover width 
+			- http://wiki.ros.org/pcl_ros/Tutorials/PassThrough%20filtering
+			- http://pointclouds.org/documentation/tutorials/passthrough.php
+
+3) [Segmentation] : Plane Detection
+	- NO ROS IMPLEMENTATION & MOST IMPORTANT ALGORITHM (RANSAC)
+	- Need to detect ground plane
+	- RANSAC Algorithm - Random sample consensus
+		- Attempt to use point cloud points to fit points that satisfy equation of a plane
+		- https://en.wikipedia.org/wiki/Random_sample_consensus
+		- Python: https://github.com/FredrikAppelros/ransac
+	- Weighted Least Squares
+		- Use weighted least squares to remove bad points
+		- Assume points left are useful
+		- http://www.itl.nist.gov/div898/handbook/pmd/section4/pmd432.htm
+
+4) [Obstacle Detection]
+	- Detect obstacles as compared to ground plane - difference in depth
+	- Euclidean Cluster Extraction
+		- Determines clusters on the ground plane where depth varies significantly from ground plane
+		- http://stackoverflow.com/questions/35708272/how-to-extract-a-specific-cluster-after-filtering-a-point-cloud
+		- http://www.pointclouds.org/documentation/tutorials/cluster_extraction.php
+		- http://answers.ros.org/question/202122/possibility-of-using-pcl-euclidean-cluster-extraction-for-object-detection/
+
+------------------------------------------------------------------------------------------------------------------------------
+Remaining Concerns:
+	- How do you throw out wall detection at all
+	- Unit test algorithms - can we use prewritten implementations of algorithms?
+	- Verify ROS feasability & compatability
+	- Verify time feasability
+
+Articles of note:
+	- Real-Time Obstacle Detection System in Indoor Environment for the Visually Impaired Using Microsoft Kinect Sensor
+		- https://www.hindawi.com/journals/js/2016/3754918/
