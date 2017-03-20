@@ -102,7 +102,7 @@ void test_gradual_slope() {
 	assert(edges.size() == 0);
 }
 
-/* No edges */
+/* Few edges, small window */
 void test_steep_slope() {
 	int window_size = 1;
 	int threshold_delta = 400;
@@ -119,14 +119,47 @@ void test_steep_slope() {
 	assert(edges.size() == 7);
 }
 
+/* Few edges, wider window */
+void test_steep_slope_wider() {
+	int window_size = 3;
+	int threshold_delta = 400;
+	int num_steps = 10;
+
+	vector<float> intensities(num_steps, 1.0);
+
+	for (int i=1; i < intensities.size(); ++i) {
+		intensities[i] = 10*intensities[i-1];
+	}
+
+	vector<int> edges = determine_intensity_edges(intensities, num_steps, window_size, threshold_delta);
+
+	assert(edges.size() == 5);
+}
+
+/* Test Flag Ends */
+void test_normal_flag_ends() {
+
+	vector<int> edge_indices;
+	int margin_of_error = 5;
+	int exp_edges = 4; //are edge indices +/-
+
+
+
+	vector<int> ends = find_flag_ends(edge_indices, margin_of_error, exp_edges);
+}
+
+
 int main() {
 	test_no_edges_1();
 	test_ten_stepping_rising_edges_1();
 	test_eight_edges_1();
 	test_gradual_slope();
 	test_steep_slope();
+	test_steep_slope_wider();
 
-	cout << "Tests All Passed\n";
+	cout << "Intensity Edges Tests Passed\n";
+
+
 
 	return 0;
 }
