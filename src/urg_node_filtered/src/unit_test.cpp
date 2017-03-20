@@ -9,8 +9,8 @@
 #define NUM_STEPS 1080
 
 /*
-catkin_make
 source devel/setup.bash
+catkin_make
 rosrun urg_node_filtered unit_test
 */
 
@@ -86,10 +86,45 @@ void test_eight_edges_1() {
 
 }
 
+/* No edges */
+void test_gradual_slope() {
+	int window_size = 1;
+	int threshold_delta = 400;
+
+	vector<float> intensities(NUM_STEPS, 1.0);
+
+	for (int i=0; i < intensities.size(); ++i) {
+		intensities[i] *= 10;
+	}
+
+	vector<int> edges = determine_intensity_edges(intensities, NUM_STEPS, window_size, threshold_delta);
+
+	assert(edges.size() == 0);
+}
+
+/* No edges */
+void test_steep_slope() {
+	int window_size = 1;
+	int threshold_delta = 400;
+	int num_steps = 10;
+
+	vector<float> intensities(num_steps, 1.0);
+
+	for (int i=1; i < intensities.size(); ++i) {
+		intensities[i] = 10*intensities[i-1];
+	}
+
+	vector<int> edges = determine_intensity_edges(intensities, num_steps, window_size, threshold_delta);
+
+	assert(edges.size() == 7);
+}
+
 int main() {
 	test_no_edges_1();
 	test_ten_stepping_rising_edges_1();
 	test_eight_edges_1();
+	test_gradual_slope();
+	test_steep_slope();
 
 	cout << "Tests All Passed\n";
 
