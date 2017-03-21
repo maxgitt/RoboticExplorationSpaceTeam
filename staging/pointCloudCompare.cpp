@@ -1,8 +1,11 @@
+// pointCLoudCompare.cpp
+// Program to compare point cloud images continuously against a base cloud image. 
+// Designed to take input from kinect. 
+
 #include <pcl/point_cloud.h>
 #include <pcl/octree/octree.h>
 #include <iostream>
 #include <vector>
-#include <ctime>
 
 using namespace std;
 
