@@ -1,5 +1,10 @@
 # Obstacle Detection Through a Kinect
 
+------------------------------------------------------------------------------------------------------------------------------
+METHOD #1: Point Cloud Analysis - Time Intensive
+------------------------------------------------------------------------------------------------------------------------------
+Method:
+
 1) [Data Acquisition] : Obtain point cloud
 	- Combine RGB color values with depth values if not done already
 	- Kinect depth range: 0.4m to 3.5m
@@ -50,3 +55,49 @@ Remaining Concerns:
 Articles of note:
 	- Real-Time Obstacle Detection System in Indoor Environment for the Visually Impaired Using Microsoft Kinect Sensor
 		- https://www.hindawi.com/journals/js/2016/3754918/
+
+
+------------------------------------------------------------------------------------------------------------------------------
+METHOD #2: Point Cloud Differentiation - Possible???
+------------------------------------------------------------------------------------------------------------------------------
+Definitions/Notes:
+- An organised point cloud is organized as a 2D array of points with the same properties you'd expect if the points were obtained from a projective camera, like the Kinect, DepthSense or SwissRanger. In PCL the points array of a point cloud is actually a 2D array but one of those dimensions is only used for representing organised point clouds.
+	- Organized point cloud data use 2d array for do future implementations.unorganized point cloud data, height = 1. This is 1D array.
+	- In both organised and unorganised point clouds, all of X Y and Z are provided for each point, but the memory layout of organised point clouds is that of a 2D array. The memory layout of the points then is closely related to the spatial layout as represented by these XYZ values.
+- An octree is a tree data structure in which each internal node has exactly eight children. 
+	- Octrees are most often used to partition a three-dimensional space by recursively subdividing it into eight octants. 
+	- Consider: A square divided into quadrants has four parts, divide it each quadrant has 4 children.
+		- Three dimensionally, that same square becomes a cube. That cube is divided into quadrants which results in eight parts. Each quadrant, when divided again has 8 children as well. 
+- A voxel represents a value on a regular grid in three-dimensional space
+	- Consider: A pixel defines the position in a two dimensional space - the voxel is analogous to this. 
+
+------------------------------------------------------------------------------------------------------------------------------
+Method:
+
+1) [Control Detection] : Obtain base point cloud that all others will be compared to. (Cloud A)
+	- Obtain base point cloud from known obstacle free arear
+	- Convert into Octrees
+	- Store octree safely for use in comparison with all other octrees
+
+2) [Obstacle Detection] : Obtain point cloud for data (continuously in loop) while in obstacle area (Cloud B)
+	- Obtain point cloud
+	- Convert into Octree
+
+3) [Comparison] : Compare point clouds
+	- Option A: Compare the two point clouds by iterating through the octrees. 
+	- Option B: Compare the octrees using PCL functions
+		- Obtain the voxels that exist in the second point cloud from obstacle area and create a vector of voxels in cloud B but not cloud A.
+
+4) [Detection] : Characterize Actual Points of Concern
+	- Iterate through vector, and check whether z value passes threshold.
+	- Recreate vector of (x,y) coordinates where points indicate actual concern
+
+5) [Publishing] : Publish data
+	- Iterate through (x,y) vector and publish points. 
+	- Consider need for transform
+	- Consider need for possibly converting to vector field
+
+------------------------------------------------------------------------------------------------------------------------------
+Links:
+- http://pointclouds.org/documentation/tutorials/octree_change.php#octree-change-detection
+
