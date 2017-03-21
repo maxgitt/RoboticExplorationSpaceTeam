@@ -38,7 +38,6 @@ double beaconPartialY(double r_1, double h_1, double k_1,
 
 ostream& operator<<(ostream& out, const BeaconEnv& b){
     out << b.position.first << "    " << b.position.second << "\n";
-    out << "at an orienation of " <<  b.orientation;
     return out << "\n";
 }
 
@@ -55,7 +54,6 @@ istream& operator>>(istream& in, BeaconEnv& b){
     // responder is the 3rd data value which is not the one connected to a computer
     unsigned resp = input[2];
     b.RoverBeacons[resp].updateReading(input[1], input[8]);
-    b.updateOrientation();
     b.positionUpdated = false;
     b.getPosition();
 
@@ -99,48 +97,36 @@ BeaconEnv::getPosition(){
     return position;
 }
 
-void BeaconEnv::updateOrientation(){
-    float dist = 0.64;
-    unsigned middle = 50;
-    float front_reading = RoverBeacons[64].beaconReadings[middle].reading;
-    float back_reading = RoverBeacons[5].beaconReadings[middle].reading;
-    float cos_val = pow(back_reading, 2) + pow(dist, 2) - pow(front_reading, 2);
-    cos_val /= ((-2)*back_reading * front_reading);
-    orientation =  M_PI - acos(cos_val);
-}
-
-float BeaconEnv::getOrientation(){
-    return orientation;
-}
-
-void
-BeaconEnv::updatePosition(){
-    vector<double> readings;
-    vector<pair<double,double>> offsets;
+void BeaconEnv::updatePosition(){
     auto it = RoverBeacons.begin();
     auto endIt = RoverBeacons.end();
+    for(; it != endIt;++it){
+        it->second.updatePosition();
+    }
+}
+
+
+
+void
+RoverBeacon::updatePosition(){
+    vector<double> readings;
+    vector<pair<double,double>> offsets;
+    auto it = beaconReadings.begin();
+    auto endIt = beaconReadings.end();
 
 #ifdef DEBUG
-    cout << "Calculating the position of rover beacon with an old position of"
+    cout << "Calculating the position of rover beacon " << id <<  " with an old position of"
         << position.first << "," << position.second << " and the following readings\n";
 #endif
     for (; it != endIt; ++it) {
 #ifdef DEBUG
-        cout << "        " << "Rover Beacon " << it->first << ": " << it->second.reading << "\n";
+        cout << "        " << "Sieve Beacon " << it->first << ": " << it->second.reading << "\n";
 #endif
-        auto inner_it = it->second.beaconReadings.begin();
-        auto endinner_it = it->second.beaconReadings.end();
-            
-        for (; inner_it != endinner_it; ++inner_it) {
-#ifdef DEBUG
-            cout << "        " << "Sieve Beacon " << inner_it->first << ": " << inner_it->second.reading << "\n";
-#endif        
-            readings.push_back(inner_it->second.reading);
-            offsets.push_back(inner_it->second.offset);
-        }
+            readings.push_back(it->second.reading);
+            offsets.push_back(it->second.offset);
     }
 
-    position = steepest_descent(readings,offsets, position);
+    position = steepest_descent(readings,offsets,position);
 #ifdef DEBUG
     cout << "The position of is " << position.first << "," << position.second << "\n";
 #endif
@@ -148,7 +134,7 @@ BeaconEnv::updatePosition(){
 }
 
 pair<double, double> 
-BeaconEnv::steepest_descent(const vector<double>& readings, 
+RoverBeacon::steepest_descent(const vector<double>& readings, 
         const vector<pair<double,double>>& offsets,
         pair<double, double>  old_pos) {
     pair<double, double> new_pos;

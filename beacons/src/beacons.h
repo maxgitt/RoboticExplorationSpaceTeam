@@ -44,7 +44,8 @@ class RoverBeacon : public Beacon {
     RoverBeacon(){}
     RoverBeacon(unsigned _id, std::pair<double, double> _offset, double _bias):
         Beacon(_id,_offset, _bias){
-            beaconReadings[50] = sieveBeacon(50, std::pair<double, double>(1,0),0);   
+            beaconReadings[86] = sieveBeacon(86, std::pair<double, double>(0,0),0);
+            position = std::pair<double, double>(1,1);  
         }
 	std::unordered_map< unsigned, sieveBeacon  > beaconReadings;
 	std::unordered_map< unsigned, sieveBeacon  >::iterator beaconIterator;
@@ -52,9 +53,13 @@ class RoverBeacon : public Beacon {
     void updateReading(int _id, double _reading);
     double getBias(int _id);
     void updateBias(int _id, double _bias);
+    void updatePosition();
     std::pair<double, double> steepest_descent(const std::vector<double>& readings, 
         const std::vector<std::pair<double,double>>& offsets,
         std::pair<double, double>  old_pos); 
+    std::pair<double, double> position;
+
+
 };
 
 
@@ -62,26 +67,21 @@ class BeaconEnv{
     public:
 
 	BeaconEnv(){
-        RoverBeacons[64] = RoverBeacon(64,  std::pair<double, double>(.2,0),0);
-        RoverBeacons[5] = RoverBeacon(5, std::pair<double, double>(-.2,0),0);
+        RoverBeacons[34] = RoverBeacon(34,  std::pair<double, double>(.2,0),0);
+        RoverBeacons[26] = RoverBeacon(26, std::pair<double, double>(-.2,0),0);
     }
-    std::pair<double, double> position= std::pair<double, double>(3,0); 
-    bool positionUpdated = false;
-    float orientation; // in degrees
+        float orientation; // in degrees
 	friend std::ostream& operator<<(std::ostream& out, const BeaconEnv& b);
 	friend std::istream& operator>>(std::istream& in, BeaconEnv& b);
 	// <receiver id, sender id> ---------> <distance, last updated time>
 	std::unordered_map< unsigned,RoverBeacon  > RoverBeacons;
 	std::unordered_map< unsigned, RoverBeacon  >::iterator beaconIterator;
     std::pair<double, double> getPosition();    
-
+    std::pair<double, double> position; 
+    bool positionUpdated = false;
     void updatePosition();
     float getOrientation();
     void updateOrientation();
-    std::pair<double, double> steepest_descent(
-        const std::vector<double>& readings, 
-        const std::vector<std::pair<double,double>>& offsets,
-        std::pair<double, double> old_pos); 
 };
 
 #endif
