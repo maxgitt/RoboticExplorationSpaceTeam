@@ -630,7 +630,7 @@ vector<int> determine_intensity_edges(vector<float> intensities, int num_steps, 
     return intensity_edges;
   }
 
-  for (int i = 0; i < num_steps-(window_size*2); ++i) {
+  for (int i = 0; i < num_steps-(window_size*2)+1; ++i) {
     
     int sample_sum_1 = 0;
     int sample_sum_2 = 0;
@@ -638,7 +638,7 @@ vector<int> determine_intensity_edges(vector<float> intensities, int num_steps, 
     // Calculate sum of sample 1 and sample 2
     for (int j = 0; j < window_size; ++j) {
       sample_sum_1 += intensities[i+j];
-      sample_sum_2 += intensities[i+window_size+j];
+      sample_sum_2 += intensities[window_size+i+j];
     }
 
     // Determine averages
