@@ -139,13 +139,26 @@ void test_steep_slope_wider() {
 /* Test Flag Ends */
 void test_normal_flag_ends() {
 
-	vector<int> edge_indices;
+	vector<float> intensities(1080,1000);
 	int margin_of_error = 5;
-	int exp_edges = 4; //are edge indices +/-
+	int exp_edges = 4;
 
+	for(int i=0; i < intensities.size(); ++i) {
+		if ((216 <= i && i < 432) || (648 <= i && i < 864)) {
+			intensities[i] = 1800;
+		}
+	}
 
+	//vector<int> edge_indices = determine_intensity_edges(intensities, NUM_STEPS, 1, 600);
+
+	vector<int> edge_indices = {216,-432,648,-864};
 
 	vector<int> ends = find_flag_ends(edge_indices, margin_of_error, exp_edges);
+	cout << ends.size() << endl;
+	for (auto val: ends) {
+		cout << val << endl;
+	}
+
 }
 
 
@@ -160,6 +173,10 @@ int main() {
 	cout << "Intensity Edges Tests Passed\n";
 
 
+	test_normal_flag_ends();
+
+
+	cout << "Test Flag Ends Passed\n";
 
 	return 0;
 }

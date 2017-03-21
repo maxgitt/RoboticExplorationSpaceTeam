@@ -670,14 +670,13 @@ vector<int> determine_intensity_edges(vector<float> intensities, int num_steps, 
 // Checks once k sequential gaps are found without updating gap length
 // Assert that expected oscillation of edge intensity occurs
 // Returns left and right flag end steps in that order
-vector<int> find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_edges) {
+vector<int> find_flag_ends(vector<int>& edge_indices, int gap_delta, int exp_edges) {
 
   vector<int> flag_ends(2);
   if (edge_indices.size() < 2 ) {
     flag_ends.push_back(-99999);
     return flag_ends;
   }
-
   
   vector<int> flag_pattern_edges;
   // Initialze found edges and push first edge into edge_indices
@@ -689,12 +688,18 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_epsilon, int exp_e
 
   // Count useful edges
   for (int i = 0; i < edge_indices.size()-1 ; ++i) {
+
+    //found flag
+    if (found_edges == exp_edges) {
+      break;
+    }
+
     // High->Low or Low->High intensity change 
     if (edge_indices[i] > 0 && edge_indices[i+1] < 0
       || edge_indices[i] < 0 && edge_indices[i+1] > 0) {
       // Valid intensity change 
-      if ((abs(edge_indices[i+1]) - abs(edge_indices[i])) < (gap_length + gap_epsilon)
-        && (abs(edge_indices[i+1]) - abs(edge_indices[i])) > (gap_length - gap_epsilon)) {
+      if ((abs(edge_indices[i+1]) - abs(edge_indices[i])) < (gap_length + gap_delta)
+        && (abs(edge_indices[i+1]) - abs(edge_indices[i])) > (gap_length - gap_delta)) {
           // Valid gap_length
           // Update gap_length
           gap_length = abs(edge_indices[i+1]) - abs(edge_indices[i]);
