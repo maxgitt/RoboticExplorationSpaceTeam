@@ -745,6 +745,60 @@ vector<double> get_position(vector<int>& flag_ends, vector<float> distance_steps
     return coordinates;
   }
 
+  /*
+  /////////////////////////////////////////////////////////////////////////////
+
+    COORDINATE ESTIMATION: 
+
+    1) Definitions
+
+    Arena width: 3.88m
+    Arena height: 7.38m
+    Flag width: 1.575m
+
+         top-left at (0, 7.38) -> _________ <- top-right corner at (3.88, 7.38)
+                                 |         | 
+                                 |         |
+                                 |    X <--|-- arena center at (1.94, 3.69)
+                                 |         |
+             ORIGIN at (0, 0) -> |_________| 
+                                    [=X=] <-- Flag center at (1.94, 0)
+    ---------------------------------------------------------------------------
+    2) Rover-to-flag variables
+
+    Distance to left flag end: dL
+    Distance to right flag end: dR
+
+                                      ROVER
+                                      *****
+                                      *   *
+                                      *   *
+                                      *****
+                                        * <- backlidar
+                                      /  \
+                              (dR)  /     \  (dL)
+                                   [===X===] 
+                                     FLAG
+    ---------------------------------------------------------------------------
+    3) Find (x,y) algorithm 
+    
+        1) Determine (x,y) of flag ends
+        -> (1.94 +- (flag_width/2), 0) 
+        => left: (1.1525, 0), right: (2.7275, 0)
+
+        2) Set system of equations
+        -> (x - 1.1525)^2 + y^2 = dR^2  (eqn 1)
+        -> (x - 2.7275)^2 + y^2 = dL^2
+
+        3) Combine and solve for x
+        => x = (dR^2- dL^2 + 6.111) / 3.15
+
+        4) Substitute x  in eqn 1 to find y
+        => y = (1/5040)*sqrt{2560000*dL^4 + (3200*dL^2)*(1600*dR^2 + 3969) 
+                                                 - (3969 - 1600*dR^2)^2}
+                                                 
+  /////////////////////////////////////////////////////////////////////////////
+  */
   coordinates.push_back((pow(dist_right_end, 2) - pow(dist_left_end, 2) + 6.111) / 3.15);
   coordinates.push_back(sqrt(-2560000*pow(dist_left_end,4) + 3200*pow(dist_left_end,2)*(1600*pow(dist_right_end,2) + 3969) - pow((3969 - 1600*pow(dist_right_end,2)),2))/5040);
   return coordinates;
