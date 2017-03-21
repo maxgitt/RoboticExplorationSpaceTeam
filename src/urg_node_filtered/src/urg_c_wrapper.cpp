@@ -677,7 +677,7 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_delta, int exp_edg
     flag_ends.push_back(-99999);
     return flag_ends;
   }
-  
+
   vector<int> flag_pattern_edges;
   // Initialze found edges and push first edge into edge_indices
   int found_edges = 1;
@@ -687,10 +687,10 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_delta, int exp_edg
   int gap_length = abs(edge_indices[1]) - abs(edge_indices[0]);
 
   // Count useful edges
-  for (int i = 0; i < edge_indices.size()-1 ; ++i) {
+  for (int i = 0; i < edge_indices.size(); ++i) {
 
     //found flag
-    if (found_edges == exp_edges) {
+    if (flag_pattern_edges.size() == exp_edges) {
       break;
     }
 
@@ -700,6 +700,7 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_delta, int exp_edg
       // Valid intensity change 
       if ((abs(edge_indices[i+1]) - abs(edge_indices[i])) < (gap_length + gap_delta)
         && (abs(edge_indices[i+1]) - abs(edge_indices[i])) > (gap_length - gap_delta)) {
+
           // Valid gap_length
           // Update gap_length
           gap_length = abs(edge_indices[i+1]) - abs(edge_indices[i]);
@@ -728,9 +729,10 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_delta, int exp_edg
     flag_ends.push_back(-99999);
   }
   else {
-    flag_ends.push_back(flag_pattern_edges[0]);
-    flag_ends.push_back(flag_pattern_edges[exp_edges]);
+    flag_ends[0] = flag_pattern_edges[0];
+    flag_ends[1] = flag_pattern_edges[exp_edges-1];
   }
+
   return flag_ends;
 }
 

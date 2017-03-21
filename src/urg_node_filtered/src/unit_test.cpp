@@ -149,15 +149,12 @@ void test_normal_flag_ends() {
 		}
 	}
 
-	//vector<int> edge_indices = determine_intensity_edges(intensities, NUM_STEPS, 1, 600);
-
-	vector<int> edge_indices = {216,-432,648,-864};
+	vector<int> edge_indices = determine_intensity_edges(intensities, NUM_STEPS, 1, 600);
 
 	vector<int> ends = find_flag_ends(edge_indices, margin_of_error, exp_edges);
-	cout << ends.size() << endl;
-	for (auto val: ends) {
-		cout << val << endl;
-	}
+
+	assert(ends[0] == 216);
+	assert(ends[1] == 864);
 
 }
 
