@@ -37,7 +37,8 @@ double beaconPartialY(double r_1, double h_1, double k_1,
         const pair<double, double>& guess);
 
 ostream& operator<<(ostream& out, const BeaconEnv& b){
-    out << b.position.first << "    " << b.position.second;
+    out << b.position.first << "    " << b.position.second << "\n";
+    out << "at an orienation of " <<  b.orientation;
     return out << "\n";
 }
 
@@ -54,10 +55,11 @@ istream& operator>>(istream& in, BeaconEnv& b){
     // responder is the 3rd data value which is not the one connected to a computer
     unsigned resp = input[2];
     b.RoverBeacons[resp].updateReading(input[1], input[8]);
+    b.updateOrientation();
     b.positionUpdated = false;
     b.getPosition();
 
-        return in;
+    return in;
 }
 
 double 
@@ -98,17 +100,17 @@ BeaconEnv::getPosition(){
 }
 
 void BeaconEnv::updateOrientation(){
-    float dist = 2.0;
+    float dist = 0.64;
     unsigned middle = 50;
     float front_reading = RoverBeacons[64].beaconReadings[middle].reading;
     float back_reading = RoverBeacons[5].beaconReadings[middle].reading;
     float cos_val = pow(back_reading, 2) + pow(dist, 2) - pow(front_reading, 2);
-    cos_val /= (-2*back_reading * front_reading);
+    cos_val /= ((-2)*back_reading * front_reading);
     orientation =  M_PI - acos(cos_val);
 }
 
 float BeaconEnv::getOrientation(){
-return orientation;
+    return orientation;
 }
 
 void
