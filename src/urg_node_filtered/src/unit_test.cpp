@@ -12,6 +12,8 @@
 source devel/setup.bash
 catkin_make
 rosrun urg_node_filtered unit_test
+
+gdb ./devel/lib/urg_node_filtered/unit_test
 */
 
 /* Flat Intensities, Small Window, Small Threshold */
