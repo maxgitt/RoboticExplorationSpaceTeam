@@ -56,7 +56,9 @@ private:
 
 	float quaternion[4]; // yaw pitch roll
 	float gyro[3];
-	int acc[3]; // accx accy accz angx angy angz
+	float acc[3]; // accx accy accz angx angy angz
+	float acc_bias[3] = {0,0,0};
+	int acc_bc = 0;
 };
 
 //Initialize serial port 
@@ -103,19 +105,24 @@ IMUControl::receive(){
 			gyro[i] = *((float*)&num);
 		}
 
-		int a;
+
 		for(int i = 0; i < 3; ++i) {
-			ss >> a;
-			acc[i] = a;
+			ss >> tmp;
+			sscanf(tmp.c_str(), "%x", &num);  // assuming you checked input
+			num = ((num>>24)&0xff) | // move byte 3 to byte 0
+                    ((num<<8)&0xff0000) | // move byte 1 to byte 2
+                    ((num>>8)&0xff00) | // move byte 2 to byte 1
+                    ((num<<24)&0xff000000); // byte 0 to byte 3
+			acc[i] = *((float*)&num);
 		}
 
-		// for(auto i: quaternion) 
-		// 	cerr << i << " ";
-		// for(auto i: gyro) 
-		// 	cerr << i << " ";
-		// for(auto i: acc) 
-		// 	cerr << i << " ";
-		// cerr << endl;
+
+		if(acc_bc == 20) {
+			cerr << "in herrr" << endl;
+			memcpy(&acc_bias, &acc, 3*sizeof(float));
+		}
+		++acc_bc;
+
 		publish_raw();
 	}
 }
@@ -160,15 +167,15 @@ IMUControl::get_roll() {
 
 float
 IMUControl::get_lax() {
-	return acc[0] * 9.80665;
+	return (acc[0] - acc_bias[0]) * 9.80665;
 }
 float
 IMUControl::get_lay() {
-	return acc[1] * 9.80665;
+	return (acc[1] - acc_bias[1]) * 9.80665;
 }
 float
 IMUControl::get_laz() {
-	return acc[2] * 9.80665;
+	return (acc[2] - acc_bias[2]) * 9.80665;
 }
 
 float
