@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(rover_controls)
+project(rover_imu)
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
@@ -28,12 +28,10 @@ rosserial_generate_ros_lib(
   SCRIPT make_libraries.py
 )
 
-
 rosserial_configure_client(
-  DIRECTORY romeo
+  DIRECTORY mega
   TOOLCHAIN_FILE ${ROSSERIAL_ARDUINO_TOOLCHAIN}
 )
-
 
 
 ## System dependencies are found with CMake's conventions
@@ -70,12 +68,9 @@ rosserial_configure_client(
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  Excavation.msg
-  Capacity.msg
-  ArduinoIMU.msg
-)
+#add_message_files(
+#  FILES
+#)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -217,11 +212,10 @@ include_directories(
 # catkin_add_nosetests(test)
 
 # Client (arduino) controllers
-rosserial_add_client_target(romeo romeo ALL)
-rosserial_add_client_target(romeo romeo-upload)
-
+rosserial_add_client_target(mega mega ALL)
+rosserial_add_client_target(mega mega-upload)
 
 # Host (PC) controllers
-add_executable(rover_controls src/rover_controls.cpp)
-add_dependencies(rover_controls ${${PROJECT_NAME}_EXPORTED_TARGETS})
-target_link_libraries(rover_controls ${catkin_LIBRARIES})
+add_executable(rover_imu src/rover_imu.cpp)
+add_dependencies(rover_imu ${${PROJECT_NAME}_EXPORTED_TARGETS})
+target_link_libraries(rover_imu ${catkin_LIBRARIES})

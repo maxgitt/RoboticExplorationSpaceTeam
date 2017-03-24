@@ -1,0 +1,10 @@
+<launch>
+	<!-- controls node -->
+	<node name="rover_controls" pkg="rover_controls" type="rover_controls"/>
+	<param name="rover_controls/drivetrain/serial_port" type="str" value="/dev/romeo" />
+	<param name="rover_controls/drivetrain/serial_baud" type="int" value="9600" />
+	<param name="rover_controls/drivetrain/command_topic" type="str" value="cmd_vel" />
+	<param name="rover_description/robot_width" type="double" value=".17" />
+	<param name="rover_description/wheel_diameter" type="double" value=".063" />
+	<param name="rover_description/max_speed" type="double" value=".8" />
+</launch> 

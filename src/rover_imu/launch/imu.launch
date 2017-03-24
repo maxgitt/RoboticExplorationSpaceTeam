@@ -1,0 +1,7 @@
+<launch>
+	<!-- imu node -->
+	<node name="rover_imu" pkg="rover_imu" type="rover_imu"/>
+	<param name="rover_imu/serial_port" type="str" value="/dev/mega" />
+	<param name="rover_imu/serial_baud" type="int" value="9600" />
+	<param name="rover_imu/imu_topic" type="str" value="imu_data" />
+</launch> 

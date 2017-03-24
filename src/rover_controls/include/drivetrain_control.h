@@ -1,67 +1,104 @@
 #include <iostream>
 #include <cmath>
 #include <sstream>
+#include <string>
 #include "ros/ros.h"
 #include "serial/serial.h"
 #include "geometry_msgs/Twist.h"
-
-//rover physical properties
-#define ROBOT_WIDTH 1 //meters
-#define WHEEL_DIAMETER .3 //meters
 
 using namespace std;
 
 class DriveTrainControl {
 
 public:
-	DriveTrainControl() = delete;
-	DriveTrainControl(serial::Serial * _uno_serial);
+	DriveTrainControl();
 	void transmit();
+	void receive();
 private:
 	void callback(const geometry_msgs::Twist &twist_aux);
 
-	double vl = 90;
-	double vr = 90;
-	double robot_width, wheel_diameter;
+	int right_vel = 0;
+	int left_vel = 0;
 
 	ros::NodeHandle nh;
-	ros::Subscriber cmd_vel_sub; 
-	serial::Serial * uno_serial;
+	ros::Subscriber cmd_vel_sub;
+
+	// Robot Dimensions
+	double robot_width = 0;
+	double wheel_diameter = 0;
+	double max_speed = 0;
+
+	// Serial Connection Variables
+	string serial_port = "";
+	int serial_baud = 0; 
+	serial::Serial * serial;
+
+	// Network Configuration
+	string command_topic = "cmd_vel";
+
+	// Speed updated?
+	bool speed_updated = false;
 };
 
 //Initialize serial port 
-DriveTrainControl::DriveTrainControl(serial::Serial * _uno_serial) {
-	uno_serial = _uno_serial;
-	cmd_vel_sub = nh.subscribe("/cmd_vel", 10, &DriveTrainControl::callback, this);
+DriveTrainControl::DriveTrainControl() {
+	nh.param("/rover_controls/drivetrain/serial_port", serial_port, serial_port);
+	nh.param("/rover_controls/drivetrain/serial_baud", serial_baud, serial_baud);
+	nh.param("/rover_controls/drivetrain/command_topic", command_topic, command_topic);
+	nh.param("/rover_description/robot_width", robot_width, robot_width);
+	nh.param("/rover_description/wheel_diameter", wheel_diameter, wheel_diameter);
+	nh.param("/rover_description/max_speed", max_speed, max_speed);
+
+	try {
+		serial = new serial::Serial(serial_port, serial_baud, serial::Timeout::simpleTimeout(1000));
+	} catch(serial::IOException e){
+		cerr << "Error connecting to serial in DriveTrainCotroller" << endl;
+		exit(0);
+	}
+
+	cmd_vel_sub = nh.subscribe(command_topic, 10, &DriveTrainControl::callback, this);
 }
 
 void
 DriveTrainControl::callback(const geometry_msgs::Twist &twist_aux){
-	//cout << twist_aux.linear.x << twist_aux.angular.z << endl;
-	double vel_x =  twist_aux.linear.x;
-	double vel_th = twist_aux.angular.z;
-	double right_vel = 90;
-	double left_vel = 90;
-	if(abs(vel_x) == 0){
-		// turning
-		right_vel = vel_th * ROBOT_WIDTH / 2.0 * 90 + 90;
-		left_vel = 180 - right_vel;
-	}else if(abs(vel_th) == 0){
-		// forward / backward
-		left_vel  = vel_x * 90 + 90;
-		right_vel = vel_x * 90 + 90;
-	}else{
-		// moving doing arcs
-		left_vel = (vel_x - vel_th * ROBOT_WIDTH / 2.0) * 90 + 90;
-		right_vel = (vel_x + vel_th * ROBOT_WIDTH / 2.0) * 90 + 90;
-	}
-	vl =  -1 * (left_vel - 180) ;
-	vr =  -1 * (right_vel - 180);
+  double vel_x  = twist_aux.linear.x;
+  double vel_th = twist_aux.angular.z;
+  if(abs(vel_x) == 0){
+    // turning
+    right_vel = vel_th * robot_width / 2.0 * (max_speed * 255);
+    left_vel = -1 * right_vel;
+  } else if(abs(vel_th) == 0){
+    // forward / backward
+    left_vel  = vel_x * (max_speed * 255);
+    right_vel = vel_x * (max_speed * 255);
+  } else{
+    // moving doing arcs
+    left_vel = (vel_x - vel_th * robot_width / 2.0) * (max_speed * 255);
+    right_vel = (vel_x + vel_th * robot_width / 2.0) * (max_speed * 255);
+  }	
+  std::swap(left_vel, right_vel);
+  speed_updated = true;	
 }
 
 void 
 DriveTrainControl::transmit(){
+	if(!speed_updated) {
+		return;
+	}
+	else {
+		speed_updated = false;
+	}
 	stringstream ss; 
-	ss << '0' << ',' << vl <<  ',' << vr << '\n';		
-	uno_serial->write(ss.str());	
+	ss << '1' << ' ' << left_vel <<  ' ' << right_vel << '\n';		
+	serial->write(ss.str());	
+}
+
+
+void 
+DriveTrainControl::receive(){
+	string reading;
+	if(serial->available()) {
+		size_t ret = serial->readline(reading);
+	}
+	cerr << reading << endl;
 }

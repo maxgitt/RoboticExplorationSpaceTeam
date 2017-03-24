@@ -1,0 +1,6 @@
+<launch>
+	<include file="$(find rover_controls)/launch/minirover.launch"/>
+	<include file="$(find rover_imu)/launch/imu.launch"/>
+	<node name="joy" pkg="joy" type="joy_node"/>
+	<node name="teleop" pkg="base_teleop" type="base_teleop"/>
+</launch>
