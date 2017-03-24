@@ -33,8 +33,8 @@ encoders_process() {
   if(millis() - timer > 100){                   
     lastSpeed[LEFT] = ((coder[LEFT]/20) * .235614) ;   //record the latest speed value
     lastSpeed[RIGHT] = ((coder[RIGHT]/20) * .235614) ;
-    //serialPrintFloatArr(lastSpeed, 2);
-    //Serial.println();
+    serialPrintFloatArr(lastSpeed, 2);
+    Serial.println();
     coder[LEFT] = 0;                 //clear the data buffer
     coder[RIGHT] = 0;
     timer = millis();

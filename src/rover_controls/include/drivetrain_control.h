@@ -38,6 +38,7 @@ private:
 
 	// Speed updated?
 	bool speed_updated = false;
+	float wheel_speeds[2];
 };
 
 //Initialize serial port 
@@ -96,9 +97,24 @@ DriveTrainControl::transmit(){
 
 void 
 DriveTrainControl::receive(){
-	string reading;
+	string line;
+	string tmp;
 	if(serial->available()) {
-		size_t ret = serial->readline(reading);
+		size_t ret = serial->readline(line);
+		stringstream ss(line);
+	
+		uint32_t num;
+		for(int i = 0; i < 2; ++i) {
+			ss >> tmp;
+			sscanf(tmp.c_str(), "%x", &num);  // assuming you checked input
+			num = ((num>>24)&0xff) | // move byte 3 to byte 0
+	                ((num<<8)&0xff0000) | // move byte 1 to byte 2
+	                ((num>>8)&0xff00) | // move byte 2 to byte 1
+	                ((num<<24)&0xff000000); // byte 0 to byte 3
+			wheel_speeds[i] = *((float*)&num);
+		}
+		for(auto i : wheel_speeds)
+			cerr << i << ' ';
+		cerr << endl;
 	}
-	cerr << reading << endl;
 }

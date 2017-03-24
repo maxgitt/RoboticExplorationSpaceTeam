@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "mega_imu.h"
+#include <assert.h>
 
 void 
 setup() {
@@ -9,6 +10,6 @@ setup() {
 
 void 
 loop() {
-  imu_process();
+  	imu_process();
 }
 

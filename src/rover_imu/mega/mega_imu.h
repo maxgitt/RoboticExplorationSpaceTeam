@@ -7,8 +7,10 @@
 #include <FreeSixIMU.h>
 //#include <DebugUtils.h>
 
-float accel[3]; // yaw pitch roll
-float angle[3]; // yaw pitch roll
+float q[3] = {0, 0, 0};
+float g[3] = {0 , 0, 0};
+int a[3] = {0, 0, 0};
+
 FreeSixIMU sixDOF = FreeSixIMU();
 
 void
@@ -21,9 +23,15 @@ imu_setup() {
 
 void
 imu_process() {
-    sixDOF.getValues(accel);
-    sixDOF.getAngles(angle); 
-    serialPrintFloatArr(accel, 3);
-    serialPrintFloatArr(angle, 3);
-    Serial.println(""); //line break
+	sixDOF.getYawPitchRoll(q);
+	sixDOF.gyro.readGyro(&g[0], &g[1], &g[2]);
+    sixDOF.acc.readAccel(&a[0], &a[1], &a[2]);
+
+	serialPrintFloatArr(q, 3);
+	serialPrintFloatArr(g,3);
+	for(int i = 0; i < 3; ++i) {
+		Serial.print(" ");
+		Serial.print(a[i]);
+	}
+	Serial.println(); //line break
 }
