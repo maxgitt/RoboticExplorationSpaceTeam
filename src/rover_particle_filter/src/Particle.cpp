@@ -1,13 +1,6 @@
-//
-//  particle.cpp
-//  ParticleFilter
-//
-//  Created by Kishore B. Rao on 3/25/17.
-//  Copyright © 2017 Kishore B. Rao. All rights reserved.
-//
+#include "rover_particle_filter/Particle.h"
 
 #include <stdio.h>
-#include "particle.h"
 
 
 Particle::Particle(double xPosIn, double yPosIn, double thetaIn) : xPos(xPosIn), yPos(yPosIn), theta(thetaIn), weight(0){}

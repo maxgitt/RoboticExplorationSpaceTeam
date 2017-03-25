@@ -1,0 +1,6 @@
+<launch>
+	<node pkg="tf" type="static_transform_publisher" name="map_broadcaster" args="0.0 0.0 0.0 0.0 0.0 0.0 map world 100" />
+	<node name="map_server" pkg="map_server" type="map_server" args="$(find rover_navigation)/map/rmc_map.yaml"/>
+	<node name="filter" pkg="rover_particle_filter" type="rover_particle_filter"/>
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find rover_particle_filter)/launch/filter_test.rviz"/>
+</launch>
