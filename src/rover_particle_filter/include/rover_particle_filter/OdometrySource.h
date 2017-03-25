@@ -6,14 +6,15 @@
 
 #include <string>
 
+template <class MessageType>
 class OdometrySource {
 public:
 	OdometrySource(std::string);
 	~OdometrySource();
-	void getData(nav_msgs::Odometry::ConstPtr&);
+	void getData(typename MessageType::ConstPtr&);
 	
 private:
-	void odometryCallback(const nav_msgs::Odometry::ConstPtr&);
+	void odometryCallback(const typename MessageType::ConstPtr&);
 
 	// Node Handle
 	ros::NodeHandle nh;
@@ -24,21 +25,22 @@ private:
 	// User defined topic name
 	std::string topic_name;
 
-	nav_msgs::Odometry::ConstPtr msg;
+	typename MessageType::ConstPtr msg;
 
 };
 
-OdometrySource::OdometrySource( std::string topic_name) {
-	sh = nh.subscribe<nav_msgs::Odometry>(topic_name, 1, &OdometrySource::odometryCallback, this);
+template <class MessageType>
+OdometrySource<MessageType>::OdometrySource(std::string topic_name) {
+	sh = nh.subscribe<MessageType>(topic_name, 1, & OdometrySource::odometryCallback, this);
 }
 
-void
-OdometrySource::odometryCallback(const nav_msgs::Odometry::ConstPtr& _msg) {
+template <class MessageType>
+void OdometrySource<MessageType>::odometryCallback(const typename MessageType::ConstPtr& _msg) {
 	msg = _msg;
 }
 
-void 
-OdometrySource::getData(nav_msgs::Odometry::ConstPtr& _msg) {
+template <class MessageType>
+void OdometrySource<MessageType>::getData(typename MessageType::ConstPtr& _msg) {
 	_msg = msg;
 }
 
