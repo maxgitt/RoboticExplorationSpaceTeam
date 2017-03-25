@@ -117,6 +117,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -197,3 +198,6 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+add_executable(rover_particle_filter src/rover_particle_filter_node.cpp src/ParticleFilter.cpp)
+target_link_libraries(rover_particle_filter ${catkin_LIBRARIES})
