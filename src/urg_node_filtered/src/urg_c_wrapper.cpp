@@ -642,8 +642,8 @@ vector<int> determine_intensity_edges(vector<float> intensities, int num_steps, 
     }
 
     // Determine averages
-    int sample_avg_1 = sample_sum_1/window_size;
-    int sample_avg_2 = sample_sum_2/window_size;
+    double sample_avg_1 = sample_sum_1/window_size;
+    double sample_avg_2 = sample_sum_2/window_size;
   
     // Determine if function increased or decreased beyond threshold
     int intensity_delta = sample_avg_2 - sample_avg_1;
@@ -652,11 +652,17 @@ vector<int> determine_intensity_edges(vector<float> intensities, int num_steps, 
       if (intensity_delta > 0) {
         // Select first step of second sample as edge index
         intensity_edges.push_back(i+window_size);
+        if (window_size != 1) {
+          i += (window_size );
+        }
       }
       // Intensity is decreasing
       else {
         // Select first step of second sample as edge index
         intensity_edges.push_back(-(i+window_size));
+        if (window_size != 1) {
+          i += (window_size );
+        }
       }
     }
   }
@@ -670,6 +676,10 @@ vector<int> determine_intensity_edges(vector<float> intensities, int num_steps, 
 // Checks once k sequential gaps are found without updating gap length
 // Assert that expected oscillation of edge intensity occurs
 // Returns left and right flag end steps in that order
+// *NEEDS TOLERANCE IF BUGGED EDGE BEFORE REAL IN FOLLOWING SCENARIO*
+// R = Real edge, F = False edge
+// R -R R -R F R -R (this should ignore that middle F)
+// Should keep trying next edge until it doesn't fit in the allowed gap_delta
 vector<int> find_flag_ends(vector<int>& edge_indices, int gap_delta, int exp_edges) {
 
   vector<int> flag_ends(2);
@@ -689,14 +699,18 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_delta, int exp_edg
   // Count useful edges
   for (int i = 0; i < edge_indices.size(); ++i) {
 
+    if (found_edges == 1 && i != (edge_indices.size() - 1)) {
+      gap_length = abs(edge_indices[i+1]) - abs(edge_indices[i]);
+    }
+
     //found flag
     if (flag_pattern_edges.size() == exp_edges) {
       break;
     }
 
     // High->Low or Low->High intensity change 
-    if (edge_indices[i] > 0 && edge_indices[i+1] < 0
-      || edge_indices[i] < 0 && edge_indices[i+1] > 0) {
+    if ((edge_indices[i] > 0 && edge_indices[i+1] < 0)
+      || (edge_indices[i] < 0 && edge_indices[i+1] > 0)) {
       // Valid intensity change 
       if ((abs(edge_indices[i+1]) - abs(edge_indices[i])) < (gap_length + gap_delta)
         && (abs(edge_indices[i+1]) - abs(edge_indices[i])) > (gap_length - gap_delta)) {
@@ -718,6 +732,12 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_delta, int exp_edg
     }
     // Low->low or high->high intensity change
     else {
+        if (found_edges != 1) { //AHHHHHHHHHHHH
+          if ((abs(edge_indices[i+1]) - abs(edge_indices[i])) < (gap_length + gap_delta)) {
+            edge_indices[i+1] = edge_indices[i];
+            continue;
+          }
+        }
         // Reset to initial values
         found_edges = 1;
         flag_pattern_edges.clear();
@@ -726,7 +746,8 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_delta, int exp_edg
   }
 
   if (found_edges != exp_edges) {
-    flag_ends.push_back(-99999);
+
+    flag_ends[0] = (-99999);
   }
   else {
     flag_ends[0] = flag_pattern_edges[0];
@@ -742,13 +763,13 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_delta, int exp_edg
 // Returns (x,y) coordinate vector of the rover
 vector<double> get_position(vector<int>& flag_ends, vector<float> distance_steps) {
 
-  double dist_left_end = distance_steps[flag_ends[0]];
-  double dist_right_end = distance_steps[flag_ends[1]];
+  double dist_left_end = distance_steps[flag_ends[0]] / 1000;
+  double dist_right_end = distance_steps[flag_ends[1]] / 1000;
   vector<double> coordinates(2);
 
   if (flag_ends[0] == -99999) {
-    coordinates.push_back(-99999);
-    coordinates.push_back(-99999);
+    coordinates[0] = (-99999);
+    coordinates[1] = (-99999);
     return coordinates;
   }
 
@@ -787,11 +808,12 @@ vector<double> get_position(vector<int>& flag_ends, vector<float> distance_steps
                                    [===X===] 
                                      FLAG
     ---------------------------------------------------------------------------
-    3) Find (x,y) algorithm 
+    3) Find x,y position 
     
         1) Determine (x,y) of flag ends
         -> (1.94 +- (flag_width/2), 0) 
-        => left: (1.1525, 0), right: (2.7275, 0)
+        => left: (1.1525, 0)
+        => right: (2.7275, 0)
 
         2) Set system of equations
         -> (x - 1.1525)^2 + y^2 = dR^2  (eqn 1)
@@ -806,8 +828,9 @@ vector<double> get_position(vector<int>& flag_ends, vector<float> distance_steps
                                                  
   /////////////////////////////////////////////////////////////////////////////
   */
-  coordinates.push_back((pow(dist_right_end, 2) - pow(dist_left_end, 2) + 6.111) / 3.15);
-  coordinates.push_back(sqrt(-2560000*pow(dist_left_end,4) + 3200*pow(dist_left_end,2)*(1600*pow(dist_right_end,2) + 3969) - pow((3969 - 1600*pow(dist_right_end,2)),2))/5040);
+  coordinates[0] = ((pow(dist_right_end, 2) - pow(dist_left_end,2) + 6.111) / 3.15);
+
+  coordinates[1] = sqrt(-2560000*pow(dist_left_end, 4) + 3200*pow(dist_left_end,2)*(1600*pow(dist_right_end,2) + 3969) - pow((3969 - 1600*pow(dist_right_end,2)),2))/5040;
   return coordinates;
 }
 
