@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(rover_navigation)
 
+
+add_definitions(-std=c++11)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -117,7 +120,6 @@ catkin_package(
 # include_directories(include)
 include_directories(
   include
-  include/rover_particle_filter
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -193,3 +195,6 @@ include_directories(
 
 add_executable(odometry_publisher src/odometry_publisher.cpp)
 target_link_libraries(odometry_publisher ${catkin_LIBRARIES})
+
+add_executable(rover_navigation src/rover_navigation_node.cpp src/Navigation.cpp)
+target_link_libraries(rover_navigation ${catkin_LIBRARIES})

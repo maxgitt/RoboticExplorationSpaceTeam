@@ -1,0 +1,282 @@
+// scale: how much should distances be scaled by? Higher values retain
+// greater precision in distance measurements.
+void distance_transform(int width, int stride, int height, const uint8_t *in, uint32_t *out, int scale)
+{
+    const int one_distance = scale;
+    const int sqrt2_distance = sqrt(2) * scale;
+
+    int max = 65535;
+
+    for (int y = 0; y < height; y++)
+        for (int x = 0; x < width; x++)
+            out[y*stride + x] = max;
+
+    // we perform exactly two passes, one from top left to bottom
+    // right, then from bottom right to top left.
+
+    for (int y = 1; y < height; y++) {
+        for (int x = 1; x + 1 < width; x++) {
+            if (in[y*stride + x] > 0) {
+                // any > 1 input values have a distance of zero. (1 == slammable non-hazard)
+                out[y*stride + x] = 0;
+            } else {
+                int dist0 = out[(y-1)*stride + (x - 1)] + one_distance;
+                int dist1 = out[(y-1)*stride + (x + 0)] + one_distance;
+                int dist2 = out[(y-1)*stride + (x + 1)] + sqrt2_distance;
+                int dist3 = out[(y-0)*stride + (x - 1)] + sqrt2_distance;
+
+                int v = dist0;
+                if (dist1 < v)
+                    v = dist1;
+                if (dist2 < v)
+                    v = dist2;
+                if (dist3 < v)
+                    v = dist3;
+
+                if (v > max)
+                    v = max;
+
+                out[y*stride + x] = v;
+            }
+        }
+    }
+
+    for (int y = height - 2; y >= 0; y--) {
+        for (int x = width - 2; x >= 1; x--) {
+
+            int v = out[(y+0)*stride + (x + 0)];
+
+            if (v == 0)
+                continue;
+
+            int dist0 = out[(y+1)*stride + (x - 1)] + sqrt2_distance;
+            int dist1 = out[(y+1)*stride + (x + 0)] + one_distance;
+            int dist2 = out[(y+1)*stride + (x + 1)] + sqrt2_distance;
+            int dist3 = out[(y+0)*stride + (x + 1)] + one_distance;
+
+            if (dist1 < v)
+                v = dist1;
+            if (dist2 < v)
+                v = dist2;
+            if (dist3 < v)
+                v = dist3;
+
+            out[y*stride + x] = v;
+        }
+    }
+}
+
+// width/stride/height/cs: a cost map
+void wavefront(int width, int cs_stride, int height, const uint8_t *cs, uint32_t *out, int out_stride, int scale, int goalx, int goaly)
+{
+    if (goalx < 0)
+        goalx = 0;
+    if (goalx >= width)
+        goalx = width-1;
+    if (goaly < 0)
+        goaly = 0;
+    if (goaly >= height)
+        goaly = height - 1;
+
+    assert(goalx >= 0 && goalx < width && goaly >= 0 && goaly < height);
+
+    for (int y = 0; y < height; y++)
+        for (int x = 0; x < width; x++)
+            out[y*out_stride + x] = 1UL<<16;
+
+    struct rec
+    {
+        int x, y;
+        int cost;
+        struct rec *next;
+    };
+
+    // consider our neighbors
+    const struct { int dx, dy, cost; } neighbors[] = { { -1, -1, scale*sqrt(2) },
+                                                       { -1,  0, scale*1 },
+                                                       { -1,  1, scale*sqrt(2) },
+                                                       {  0, -1, scale*1 },
+                                                       {  0,  1, scale*1 },
+                                                       {  1, -1, scale*sqrt(2) },
+                                                       {  1,  0, scale*1 },
+                                                       {  1,  1, scale*sqrt(2) },
+                                                       { -2, -1, scale*sqrt(5) }, // optional
+                                                       { -2,  1, scale*sqrt(5) },
+                                                       { -1, -2, scale*sqrt(5) },
+                                                       { -1,  2, scale*sqrt(5) },
+                                                       {  2, -1, scale*sqrt(5) },
+                                                       {  2,  1, scale*sqrt(5) },
+                                                       {  1, -2, scale*sqrt(5) },
+                                                       {  1,  2, scale*sqrt(5) }
+    };
+
+    int nneighbors = sizeof(neighbors) / sizeof(*neighbors);
+
+    // instead of a heap, we'll do a counting sort
+    int nidx = 128;
+    struct rec **idxs = calloc(nidx, sizeof(struct rec*));
+
+    // the first wave begins at the goal
+    if (1) {
+        struct rec *r = calloc(1, sizeof(struct rec));
+        r->x = goalx;
+        r->y = goaly;
+        r->cost = 0;
+        assert(r->cost < nidx);
+        idxs[r->cost] = r;
+    }
+
+    // which node are we processing?
+    int idxidx = 0;
+    while (idxidx < nidx) {
+        if (idxs[idxidx] == NULL) {
+            idxidx++;
+            continue;
+        }
+
+        struct rec *r = idxs[idxidx];
+        idxs[idxidx] = r->next;
+
+        uint8_t v0 = cs[r->y * cs_stride + r->x];
+
+        for (int neighboridx = 0; neighboridx < nneighbors; neighboridx++) {
+            int dx = neighbors[neighboridx].dx;
+            int dy = neighbors[neighboridx].dy;
+            int dcost = neighbors[neighboridx].cost;
+
+            // coordinates of the cell-to-be-visited
+            int x1 = r->x + dx;
+            int y1 = r->y + dy;
+            if (x1 < 0 || x1 >= width || y1 < 0 || y1 >= height)
+                continue;
+
+            uint8_t v1 = cs[y1 * cs_stride + x1];
+            if (v1 == 255)
+                continue;
+
+            uint32_t old_cost = out[y1 * out_stride + x1];
+
+            int child_cost = r->cost + (v1+v0) * dcost / 2;
+
+            if (child_cost < old_cost) {
+                out[y1 * out_stride + x1] = child_cost;
+
+                if (child_cost >= nidx) {
+                    int new_nidx = nidx;
+                    while (new_nidx <= child_cost)
+                        new_nidx *= 2;
+
+                    struct rec **new_idxs = calloc(new_nidx, sizeof(struct rec*));
+                    memcpy(new_idxs, idxs, nidx * sizeof(struct rec*));
+                    free(idxs);
+                    idxs = new_idxs;
+                    nidx = new_nidx;
+                }
+
+                struct rec *child = calloc(1, sizeof(struct rec));
+                child->x = x1;
+                child->y = y1;
+                child->cost = child_cost;
+
+                child->next = idxs[child->cost];
+                idxs[child->cost] = child;
+            }
+        }
+
+        free(r);
+    }
+
+    free(idxs);
+}
+
+
+// Chunk of code for computing configuration space and
+// finding the shortest path through it. 
+// NOTE: Not a standalone function!
+//
+// rpg->gm is a grid map, which is basically an image where pixels
+// have associated coordinates in meters.
+// bottom left coordinate of image: (rpg->gm.x0, rpg->gm.y0)
+
+{
+    // use distance transform to compute configurations space
+    uint32_t *dist_transform = malloc(rpg->gm.px.height * rpg->gm.px.stride * sizeof(uint32_t));
+    int dt_scale = 5;
+    distance_transform(rpg->gm.px.width, rpg->gm.px.stride, rpg->gm.px.height, rpg->gm.px.data, dist_transform, dt_scale);
+
+    // compute configuration space
+    uint8_t *config_space = calloc(1, rpg->gm.px.height * rpg->gm.px.stride);
+    if (1) {
+        uint32_t thresh = 0.25 * dt_scale / rpg->gm.meters_per_pixel;
+
+        for (int y = 0; y < rpg->gm.px.height; y++) {
+            for (int x = 0; x < rpg->gm.px.width; x++) {
+                int v = dist_transform[y*rpg->gm.px.stride + x];
+
+                double dist = v * rpg->gm.meters_per_pixel / dt_scale;
+
+                if (dist < 0.20)
+                    config_space[y*rpg->gm.px.stride + x] = 255;
+                else if (dist < 0.5)
+                    config_space[y*rpg->gm.px.stride + x] = max(1, 1 / (dist));
+                else
+                    config_space[y*rpg->gm.px.stride + x] = 1;
+
+//                    config_space[y*rpg->gm.px.stride + x] = 64.0 / (1 + v - thresh);
+            }
+        }
+    }
+
+    free(dist_transform);
+
+    // find shortest path through configuration space using wavefront
+    int wf_scale = 5;
+    uint32_t *wf32 = malloc(rpg->gm.px.height * rpg->gm.px.stride * sizeof(uint32_t));
+
+    wavefront(rpg->gm.px.width, rpg->gm.px.stride, rpg->gm.px.height, config_space, wf32, rpg->gm.px.stride, wf_scale, wp_ix, wp_iy);
+
+    free(config_space);
+
+    if (state->cost_surface) {
+        free(state->cost_surface->buf);
+        free(state->cost_surface);
+    }
+
+    pthread_mutex_lock(&state->mutex);
+    state->cost_surface = calloc(1, sizeof(image_u32_t));
+    state->cost_surface->width = rpg->gm.px.width;
+    state->cost_surface->height = rpg->gm.px.height;
+    state->cost_surface->stride = rpg->gm.px.stride;
+    state->cost_surface->buf = wf32;
+    memcpy(state->cost_surface_l2gm, l2gm_xyt, 3 * sizeof(double));
+    state->cost_surface_meters_per_pixel = rpg->gm.meters_per_pixel;
+    for (int i = 0; i < 3; i++)
+        state->cost_surface_waypoint_local[i] = waypoint_local_xyt[i];
+    pthread_mutex_unlock(&state->mutex);
+
+    if (1) {
+        image_u8_t *wf8 = image_u8_create(rpg->gm.px.width, rpg->gm.px.height);
+        for (int y = 0; y < wf8->height; y++) {
+            for (int x = 0; x < wf8->width; x++) {
+                uint32_t v = wf32[y*rpg->gm.px.stride + x];
+                if (v > 128)
+                    v = 128 + (v-128) / 2;
+
+                wf8->buf[y*wf8->stride + x] = v;
+            }
+        }
+
+        vx_buffer_t *vb = vx_world_get_buffer(state->vw, "distance transform");
+        vx_buffer_set_draw_order(vb, 1000);
+
+        vx_buffer_add_back(vb,
+                           vxo_matrix_xyt(rpg->r2l_xyt),
+                           vxo_matrix_xyt(rpg->gm.xyt),
+                           vxo_matrix_scale(rpg->gm.meters_per_pixel),
+                           vxo_image(vx_resource_make_texture_u8_copy(wf8, 0)),
+                           NULL);
+        vx_buffer_swap(vb);
+
+        image_u8_destroy(wf8);
+    }
+}
