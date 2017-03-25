@@ -4,10 +4,10 @@
 #include "ros/ros.h"
 // #include "rover_particle_filter/OdometrySource.h"
 
-class ParticleFilter {
+class Filter {
 public:
-	ParticleFilter();
-	~ParticleFilter();
+	Filter();
+	~Filter();
 
 	void update();
 private:
