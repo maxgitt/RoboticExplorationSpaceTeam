@@ -4,9 +4,9 @@
 int 
 main(int argc, char** argv){
 	ros::init(argc, argv, "rover_particle_filter");
-	ParticleFilter pf;
+	ParticleFilter pf(100);
 	while(ros::ok()) {
-		pf.update();
+		pf.process();
 		ros::spinOnce(); 
 	}
 }

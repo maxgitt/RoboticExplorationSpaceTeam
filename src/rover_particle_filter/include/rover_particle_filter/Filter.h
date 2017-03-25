@@ -1,18 +1,39 @@
-#ifndef PARTICLEFILTER_H
-#define PARTICLEFILTER_H
+//
+//  filter.h
+//  ParticleFilter
+//
+//  Created by Kishore B. Rao on 3/25/17.
+//  Copyright © 2017 Kishore B. Rao. All rights reserved.
+//
 
-#include "ros/ros.h"
-// #include "rover_particle_filter/OdometrySource.h"
+#ifndef filter_h
+#define filter_h
 
-class Filter {
+#include <utility>
+#include "particle.h"
+#include <vector>
+
+class MCFilter {
+    
 public:
-	Filter();
-	~Filter();
-
-	void update();
+    
+    MCFilter(int numParticles);
+    void resample();
+    void predict();
+    void update();
+    void determinePose();
+    void process();
+    
+    
+    
 private:
-
-
+    static const std::pair<double, double> dimensions;
+    std::vector<Particle> points;
+    
+    
+    
 };
 
-#endif
+
+
+#endif /* filter_h */
