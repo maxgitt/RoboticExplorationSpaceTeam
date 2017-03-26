@@ -225,3 +225,6 @@ rosserial_add_client_target(romeo romeo-upload)
 add_executable(rover_controls src/rover_controls.cpp)
 add_dependencies(rover_controls ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(rover_controls ${catkin_LIBRARIES})
+
+add_executable(rover_teleop src/rover_teleop.cpp)
+target_link_libraries(rover_teleop ${catkin_LIBRARIES})
