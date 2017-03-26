@@ -360,13 +360,15 @@ int main(int argc, char **argv)
 
             // Start flag-based pose estimation 
 
-            int smooth_intensities_window_size = 5; // filter size
-            int det_int_edges_window_size = 4; // how many samples on each side to avg to look for an edge
-            int det_int_edges_delta_threshold = 600; // how large of a jump for an edge
+            int smooth_int_window_size = 5; // filter size
+            int det_int_edges_window_size = 3; // how many samples on each side to avg to look for an edge
+            int det_int_edges_delta_threshold = 700; // how large of a jump for an edge
             int find_flag_ends_gap_epsilon = 4; // # of steps between each edge to be a flag segment
             int find_flag_ends_exp_edges = 6; // # of expected edges 
-            vector<float> smoothed_steps = smooth_intensities(msg->intensities, 1080, smooth_intensities_window_size);
-            vector<int> detected_edges = determine_intensity_edges(smoothed_steps, 1080, det_int_edges_window_size, det_int_edges_delta_threshold);
+            int num_steps = 1080;
+            
+            vector<float> smoothed_steps = smooth_intensities(msg->intensities, num_steps, smooth_int_window_size);
+            vector<int> detected_edges = determine_intensity_edges(smoothed_steps, num_steps, det_int_edges_window_size, det_int_edges_delta_threshold);
             vector<int> flag_ends = find_flag_ends(detected_edges, find_flag_ends_gap_epsilon, find_flag_ends_exp_edges);
             vector<double> pose = get_position(flag_ends, msg->ranges);
 
@@ -374,10 +376,10 @@ int main(int argc, char **argv)
 
             pose_pub.publish(publish_pose(pose));
 
-  	    tf_broadcaster.sendTransform(
-    		tf::StampedTransform(
-      			tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.2, 0.0, 0.0)),
-        			ros::Time::now(),"back_laser_pose", "map"));
+      	    tf_broadcaster.sendTransform(
+          		tf::StampedTransform(
+            			tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.2, 0.0, 0.0)),
+              			ros::Time::now(),"back_laser_pose", "map"));
 
 	    // End
 		      } else {

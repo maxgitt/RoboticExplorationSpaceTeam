@@ -88,7 +88,6 @@ void test_determine_real_checkerboard() {
 	assert(edges.size() == 9);
 	assert(ends[0] < 5 + 5 && ends[0] > 5 - 5);
 	assert(ends[1] < 159 + 5 && ends[1] > 159 - 5);
-
 }
 
 /* Test smooth_intensities on glitched real data containing 8 flag edges
@@ -240,7 +239,7 @@ void test_real_flag_cutoff() {
 void test_real_flag_low_noise() {
 	// Create path to test data
 	string path = ros::package::getPath("urg_node_filtered");
-	path += "/src/real_flag_low_noise.txt";
+	path += "/src/real_flag_low_noise_intens.txt";
 
 	ifstream infile(path.c_str());
 	int intensity_val, idx = 0;
@@ -318,6 +317,45 @@ void test_position_real_flag_cutoff() {
 	vector<double> position;
 	position = get_position(ends, distances);
 	cout << "X: " << position[0] << " Y: " << position[1] << endl;
+}
+
+/* Get position, using real flag data */
+void test_pose_real_flag_low_noise() {
+	// Create path to test data
+	string path1 = ros::package::getPath("urg_node_filtered");
+	string path2 = ros::package::getPath("urg_node_filtered");
+	path1 += "/src/real_flag_low_noise_intens.txt";
+	path2 += "/src/real_flag_low_noise_dists.txt";
+
+	ifstream intenfile(path1.c_str());
+	ifstream distfile(path2.c_str());
+	int intensity_val = 0;
+	int idx = 0;
+	int dist_val = 0;
+	vector<float> intensities(NUM_STEPS);
+	vector<float> distances(NUM_STEPS);
+
+	while (intenfile >> intensity_val) {
+		intensities[idx++] = intensity_val;
+	}
+	idx = 0;
+	while (distfile >> dist_val) {
+		distances[idx++] = dist_val;
+	}
+	
+	int smooth_window_size = 3;
+	int det_window_size = 3;
+	int det_intensity_delta = 700;
+	int ends_gap_variability = 15;
+	int exp_edges = 6;
+
+	vector<float> smoothed_intensities = smooth_intensities(intensities, NUM_STEPS, smooth_window_size);
+	vector<int> determined_edges = determine_intensity_edges(smoothed_intensities, NUM_STEPS, det_window_size, det_intensity_delta);
+	vector<int> ends = find_flag_ends(determined_edges, ends_gap_variability, exp_edges);
+
+	vector<double> position;
+	position = get_position(ends, distances);
+	cout << "X: " << position[0] << " Y: " << position[1] << endl;
 	double orientation = get_orientation(position, ends, distances);
 	cout << "Theta: " << orientation << endl;
 }
@@ -349,6 +387,10 @@ int main() {
 	test_position_real_flag_cutoff();
 
 	cout << "Position Tests Passed\n";
+
+	test_pose_real_flag_low_noise();
+
+	cout << "Pose Tests Passed\n";
 
 
 	return 0;
