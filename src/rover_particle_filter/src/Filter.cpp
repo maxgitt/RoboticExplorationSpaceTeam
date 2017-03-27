@@ -1,28 +1,22 @@
-//
-//  filter.cpp
-//  ParticleFilter
-//
-//  Created by Kishore B. Rao on 3/25/17.
-//  Copyright © 2017 Kishore B. Rao. All rights reserved.
-//
+#include "rover_particle_filter/Filter.h"
 
 #include <stdio.h>
-#include "filter.h"
 #include <random>
 #include <iostream>
+#include <ctime>
 #include <math.h>
 #include <algorithm>
 
 using namespace std;
-
-const pair<double, double> MCFilter::dimensions(3.88,7.38);
+const pair<double, double> Filter::dimensions(3.88, 7.38);
 
 
 
 MCFilter::MCFilter(int numParticlesIn, modelParam modelIn, SelectionAlgorithm_t algoIn) : numParticles(numParticlesIn), model(modelIn), particleAlgo(algoIn), pose(3){
+     pose_array = new PoseArray("/filter_pose", "map");
     double weight = 1/numParticles;
-    std::default_random_engine generator;
-    std::uniform_real_distribution<double> xDistribution(0, dimensions.first);
+    std::default_random_engine generator(time(0));
+    std::uniform_real_distribution<double> xDistribution(-1*dimensions.first/2, dimensions.first/2);
     std::uniform_real_distribution<double> yDistribution(0, dimensions.second);
     std::uniform_real_distribution<double> thDistribution(0, 2 * M_PI);
     for (int i = 0; i < numParticles; ++i) {
@@ -32,6 +26,7 @@ MCFilter::MCFilter(int numParticlesIn, modelParam modelIn, SelectionAlgorithm_t 
         points.push_back(Particle(xPos, yPos, theta, weight));
     }
 }
+
 
 void MCFilter::generateOutputArray(vector<double>& indices) {
     vector<double> cumSum(numParticles, 0); //cumulative sum
@@ -266,6 +261,7 @@ void MCFilter::determinePose() {
 }
 
 
+
 void MCFilter::process() {
     resample(); //if our particle population has depleted, resample
     predict(); //move particels based on odometry + introduce noise
@@ -274,7 +270,7 @@ void MCFilter::process() {
     publishPose();
 }
 
-
-
-
+void MCFilter::publishPoseArray() {
+    pose_array->publish(points);
+}
 
