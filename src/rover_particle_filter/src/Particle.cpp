@@ -10,7 +10,7 @@
 #include "particle.h"
 
 
-Particle::Particle(double xPosIn, double yPosIn, double thetaIn) : xPos(xPosIn), yPos(yPosIn), theta(thetaIn), weight(0){}
+Particle::Particle(double xPosIn, double yPosIn, double thetaIn, double weightIn) : xPos(xPosIn), yPos(yPosIn), theta(thetaIn), weight(weightIn){}
 
 double Particle::getX() {
     return xPos;

@@ -1,7 +1,19 @@
+//
+//  particle.h
+//  ParticleFilter
+//
+//  Created by Kishore B. Rao on 3/21/17.
+//  Copyright © 2017 Kishore B. Rao. All rights reserved.
+//
+
+#ifndef particle_h
+#define particle_h
+
+
 class Particle {
 
 public:
-    Particle(double xPosIn, double yPosIn, double thetaIn);
+    Particle(double xPosIn, double yPosIn, double thetaIn, double weightIn);
     
     
     
@@ -31,3 +43,6 @@ private:
 };
 
 
+
+
+#endif /* particle_h */
