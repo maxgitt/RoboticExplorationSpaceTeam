@@ -4,6 +4,7 @@ project(rover_particle_filter)
 ## Add support for C++11, supported in ROS Kinetic and newer
 add_definitions(-std=c++11)
 
+add_definitions(-g)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -199,5 +200,5 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(rover_particle_filter src/rover_particle_filter_node.cpp src/Filter.cpp src/Particle.cpp src/PoseArray.cpp)
+add_executable(rover_particle_filter src/rover_particle_filter_node.cpp src/MCFilter.cpp src/Particle.cpp src/PoseArray.cpp)
 target_link_libraries(rover_particle_filter ${catkin_LIBRARIES})

@@ -1,14 +1,16 @@
-#ifndef FILTER_H
-#define FILTER_H
+#ifndef MCFILTER_H
+#define MCFILTER_H
 
 #include "rover_particle_filter/Particle.h"
-
 #include "rover_particle_filter/PoseArray.h"
+#include "rover_particle_filter/OdometrySource.h"
+#include "rover_particle_filter/OdometryDestination.h"
 
+#include "ros/ros.h"
 #include <utility>
 #include <vector>
 
-class Filter {
+class MCFilter {
     
 public:
 
@@ -60,7 +62,7 @@ private:
     void modelTranslation(); //models the translation of the robot towards the destination
     int numParticles;
     modelParam model;
-    double getTheta(); //obtains orientation information from the ROS network
+    double getDTheta(); //obtains orientation information from the ROS network
     double getTransData(); //obtains translation information from the ROS network
     void getPoseEstimate(std::vector<double>& vin);
     void updateParticleWeight(Particle& point, std::vector<double>& pose);
@@ -71,7 +73,17 @@ private:
     void robustMean();
     void publishPose();
     
+    double sensor_theta;
+    //ros::Time sensor_timestamp;
+    double sensor_x;
+    double sensor_y;
+
     PoseArray * pose_array; 
+    OdometrySource<nav_msgs::Odometry> * odom_GAZ;
+    OdometrySource<nav_msgs::Odometry> * odom_ENC;
+    OdometrySource<nav_msgs::Odometry> * odom_IMU;
+
+    OdometryDestination<geometry_msgs::PoseStamped> * pose_dest;
 };
 
 

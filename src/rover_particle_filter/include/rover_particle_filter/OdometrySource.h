@@ -11,7 +11,7 @@ class OdometrySource {
 public:
 	OdometrySource(std::string);
 	~OdometrySource();
-	void getData(typename MessageType::ConstPtr&);
+	typename MessageType::ConstPtr getData();
 	
 private:
 	void odometryCallback(const typename MessageType::ConstPtr&);
@@ -40,8 +40,8 @@ void OdometrySource<MessageType>::odometryCallback(const typename MessageType::C
 }
 
 template <class MessageType>
-void OdometrySource<MessageType>::getData(typename MessageType::ConstPtr& _msg) {
-	_msg = msg;
+typename MessageType OdometrySource<MessageType>::getData() {
+	return *msg;
 }
 
 #endif

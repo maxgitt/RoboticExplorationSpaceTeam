@@ -1,4 +1,4 @@
-#include "rover_particle_filter/Filter.h"
+#include "rover_particle_filter/MCFilter.h"
 
 #include <stdio.h>
 #include <random>
@@ -8,12 +8,25 @@
 #include <algorithm>
 
 using namespace std;
-const pair<double, double> Filter::dimensions(3.88, 7.38);
+const pair<double, double> MCFilter::dimensions(3.88, 7.38);
 
 
 
 MCFilter::MCFilter(int numParticlesIn, modelParam modelIn, SelectionAlgorithm_t algoIn) : numParticles(numParticlesIn), model(modelIn), particleAlgo(algoIn), pose(3){
-     pose_array = new PoseArray("/filter_pose", "map");
+    
+    pose_dest = new OdometryDestination<geometry_msgs::PoseStamped>("particle_filter_pose");
+
+    odom_ENC    = new OdometrySource<nav_msgs::Odometry>("gazebo_odom");
+    odom_IMU    = new OdometrySource<nav_msgs::Odometry>("gazebo_odom");
+    odom_GAZ    = new OdometrySource<nav_msgs::Odometry>("gazebo_odom");
+    pose_array  = new PoseArray("/filter_pose", "map");
+
+    sensor_theta = 0;
+    sensor_x = 0;
+    sensor_y = 1;
+    //sensor_timestamp = ros::Time::now();
+
+
     double weight = 1/numParticles;
     std::default_random_engine generator(time(0));
     std::uniform_real_distribution<double> xDistribution(-1*dimensions.first/2, dimensions.first/2);
@@ -98,21 +111,41 @@ void MCFilter::resample() {
     }
 }
 
-double MCFilter::getTheta() { //Returns the change in theta from last time
-    return 0.5;
+double MCFilter::getDTheta() { //Returns the change in theta from last time
+    nav_msgs::Odometry msg = odom_IMU->getData();
+    double curr_theta = tf::getYaw(msg.pose.pose.orientation);
+    double dth = curr_theta - sensor_theta;
+    sensor_theta = curr_theta;
+    return dth;
 }
 
 double MCFilter::getTransData() { //Returns the distance traveled
-    return 0.5;
+    nav_msgs::Odometry msg = odom_ENC->getData();
+
+    double dtrans = sqrt(pow((msg.pose.pose.position.y - sensor_y),2) + pow((msg.pose.pose.position.x - sensor_x),2));
+    sensor_x = msg.pose.pose.position.x;
+    sensor_y = msg.pose.pose.position.y;
+
+    return dtrans;   
 }
 
 void MCFilter::getPoseEstimate(vector<double>& vin) { //Returns beacon/laser data
-    vin.push_back(0.5);
-    vin.push_back(0.5);
-    vin.push_back(0.5);
+    nav_msgs::Odometry msg = odom_ENC->getData();
+    vin.push_back(msg.pose.pose.position.x);
+    vin.push_back(msg.pose.pose.position.y);
+    vin.push_back(tf::getYaw(msg.pose.pose.orientation));
 }
 
 void MCFilter::publishPose() { //Publishes the new pose
+    geometry_msgs::PoseStamped msg;
+    msg.header.stamp = ros::Time::now();
+    msg.header.frame_id = "map";
+    msg.pose.position.x = pose[0];
+    msg.pose.position.y = pose[1];
+    msg.pose.position.z = 0;
+    msg.pose.orientation = tf::createQuaternionMsgFromYaw(pose[2]);
+    pose_dest->setData((geometry_msgs::PoseStamped::ConstPtr) &msg);
+
     cout << "I am putting on ROS network!" << endl;
 }
 
@@ -121,7 +154,7 @@ void MCFilter::modelOrientation() {
     std::normal_distribution<double> distribution(model.meanRot, model.stdDevRot);
     for (int i = 0; i < numParticles; ++i) {
         double currTheta = points[i].getTh();
-        double dTheta = getTheta();
+        double dTheta = getDTheta();
         double randomError = distribution(generator);
         points[i].setAngle(currTheta + dTheta + randomError);
     }
