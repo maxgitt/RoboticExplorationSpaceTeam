@@ -41,13 +41,15 @@ class sieveBeacon : public Beacon {
 class RoverBeacon : public Beacon {
 	//offset is the offset from the center of the rover
     public:
-    RoverBeacon(){}
-    RoverBeacon(unsigned _id, std::pair<double, double> _offset, double _bias):
-        Beacon(_id,_offset, _bias){
-            beaconReadings[86] = sieveBeacon(86, std::pair<double, double>(0,0),0);
-            position = std::pair<double, double>(1,1);  
-        }
-	std::unordered_map< unsigned, sieveBeacon  > beaconReadings;
+        RoverBeacon(){}
+        RoverBeacon(unsigned _id, std::pair<double, double> _offset, double _bias):
+            Beacon(_id,_offset, _bias){
+                beaconReadings[34] = sieveBeacon(34,  std::pair<double, double>(-.2,0),0);
+                beaconReadings[33] = sieveBeacon(33, std::pair<double, double>(.2,0),0);
+                beaconReadings[26] = sieveBeacon(26, std::pair<double, double>(0,0),0);
+                position = std::pair<double, double>(0.10,0.10);  
+            }
+    std::unordered_map< unsigned, sieveBeacon  > beaconReadings;
 	std::unordered_map< unsigned, sieveBeacon  >::iterator beaconIterator;
     double getReading(int _id);
     void updateReading(int _id, double _reading);
@@ -67,9 +69,8 @@ class BeaconEnv{
     public:
 
 	BeaconEnv(){
-        RoverBeacons[34] = RoverBeacon(34,  std::pair<double, double>(.2,0),0);
-        RoverBeacons[26] = RoverBeacon(26, std::pair<double, double>(-.2,0),0);
-    }
+        RoverBeacons[86] = RoverBeacon(86, std::pair<double, double>(0,0),0);
+   }
         float orientation; // in degrees
 	friend std::ostream& operator<<(std::ostream& out, const BeaconEnv& b);
 	friend std::istream& operator>>(std::istream& in, BeaconEnv& b);

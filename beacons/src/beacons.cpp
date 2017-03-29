@@ -36,6 +36,21 @@ double beaconPartialX(double r_1, double h_1, double k_1,
 double beaconPartialY(double r_1, double h_1, double k_1, 
         const pair<double, double>& guess);
 
+bool isLOS(double amp1, double amp2, double amp3, double pre1, double pre2, double imp_pwr){
+    double fpp, rxp;
+
+    fpp = pow(amp1, 2) + pow(amp2, 2) + pow(amp3, 2);
+    fpp /= pow( pre1, 2);
+    fpp = 10 * log10(fpp);
+   cout << fpp << "\n";
+    rxp =  double(1 << 17) * imp_pwr;
+    rxp /= pow(pre2 ,2);
+    rxp = 10 * log10(rxp);
+   cout << rxp << "\n";
+    cout << "Difference is: " << fpp - rxp << "\n"; 
+    return true;
+}
+
 ostream& operator<<(ostream& out, const BeaconEnv& b){
     out << b.position.first << "    " << b.position.second << "\n";
     return out << "\n";
@@ -52,8 +67,10 @@ istream& operator>>(istream& in, BeaconEnv& b){
         input.push_back( atof(token.c_str()) );
     }
     // responder is the 3rd data value which is not the one connected to a computer
-    unsigned resp = input[2];
-    b.RoverBeacons[resp].updateReading(input[1], input[8]);
+    unsigned resp = input[1];
+    isLOS(input[10], input[11], input[12], input[16], input[24], input[21]);
+    cout << input[2] << " dist  " << input[8] << "\n";
+    b.RoverBeacons[resp].updateReading(input[2], input[8]);
     b.positionUpdated = false;
     b.getPosition();
 
@@ -157,7 +174,9 @@ RoverBeacon::steepest_descent(const vector<double>& readings,
         new_pos.second = new_pos.second - y_deriv * 0.1;
         past_error = current_error;
         current_error = calcoutor(readings, offsets, new_pos);
+        cout <<  "Errors: " << past_error << "     " << current_error << "\n";
         error_diff = abs(past_error - current_error);    
+        cout << "error diff" << error_diff << "\n";
     }
     return new_pos;
 }
