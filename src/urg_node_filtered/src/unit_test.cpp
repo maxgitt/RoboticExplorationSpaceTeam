@@ -353,9 +353,17 @@ void test_pose_real_flag_low_noise() {
 	vector<int> determined_edges = determine_intensity_edges(smoothed_intensities, NUM_STEPS, det_window_size, det_intensity_delta);
 	vector<int> ends = find_flag_ends(determined_edges, ends_gap_variability, exp_edges);
 
+	assert("Distances sourced from incorrect file" && distances[464] == 2181 && distances[643] == 1860);
+
 	vector<double> position;
 	position = get_position(ends, distances);
 	cout << "X: " << position[0] << " Y: " << position[1] << endl;
+	
+	// Accurate to .01 m
+	assert("X coordinate not in acceptable range" && 1.52 <= position[0] && position[0] <= 1.53); 
+	assert("Y coordinate not in acceptable range" && 1.82 <= position[1] && position[1] <= 1.83);
+
+
 	double orientation = get_orientation(position, ends, distances);
 	cout << "Theta: " << orientation << endl;
 }

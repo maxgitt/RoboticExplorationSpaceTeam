@@ -762,7 +762,11 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_delta, int exp_edg
 //      relative to the center of the sieve at (0,0)
 // Returns (x,y) coordinate vector of the rover
 vector<double> get_position(vector<int>& flag_ends, vector<float> distance_steps) {
-
+  
+  /*
+  NOTE: dL, dR is distance to flag ends relative to rover
+        origin is normal unit circle
+  */
   double dist_left_end = distance_steps[flag_ends[0]] / 1000;
   double dist_right_end = distance_steps[flag_ends[1]] / 1000;
   vector<double> coordinates(2);
