@@ -44,8 +44,8 @@ class RoverBeacon : public Beacon {
         RoverBeacon(){}
         RoverBeacon(unsigned _id, std::pair<double, double> _offset, double _bias):
             Beacon(_id,_offset, _bias){
-                beaconReadings[34] = sieveBeacon(34,  std::pair<double, double>(-1,0),0);
-                beaconReadings[33] = sieveBeacon(33, std::pair<double, double>(1,0),0);
+                beaconReadings[34] = sieveBeacon(34,  std::pair<double, double>(-0.75,0),0);
+                beaconReadings[33] = sieveBeacon(33, std::pair<double, double>(0.75,0),0);
                 beaconReadings[26] = sieveBeacon(26, std::pair<double, double>(0,0),0);
                 position = std::pair<double, double>(1,1);  
             }
@@ -69,7 +69,7 @@ class BeaconEnv{
     public:
 
 	BeaconEnv(){
-        RoverBeacons[86] = RoverBeacon(86, std::pair<double, double>(0,0),0);
+        RoverBeacons[10] = RoverBeacon(10, std::pair<double, double>(0,0),0);
    }
         float orientation; // in degrees
 	friend std::ostream& operator<<(std::ostream& out, const BeaconEnv& b);

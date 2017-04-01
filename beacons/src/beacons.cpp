@@ -43,12 +43,12 @@ bool isLOS(double amp1, double amp2, double amp3, double pre1, double pre2, doub
     fpp = pow(amp1, 2) + pow(amp2, 2) + pow(amp3, 2);
     fpp /= pow( pre1, 2);
     fpp = 10 * log10(fpp);
-   cout << fpp << "\n";
+    //cout << fpp << "\n";
     rxp =  double(1 << 17) * imp_pwr;
     rxp /= pow(pre2 ,2);
     rxp = 10 * log10(rxp);
-   cout << rxp << "\n";
-    cout << "Difference is: " << fpp - rxp << "\n"; 
+    //cout << rxp << "\n";
+    //cout << "Difference is: " << fpp - rxp << "\n"; 
     return true;
 }
 
@@ -70,7 +70,7 @@ istream& operator>>(istream& in, BeaconEnv& b){
     // responder is the 3rd data value which is not the one connected to a computer
     unsigned resp = input[1];
     isLOS(input[10], input[11], input[12], input[16], input[24], input[21]);
-    cout << input[2] << " dist  " << input[8] << "\n";
+    //cout << input[2] << " dist  " << input[8] << "\n";
     b.RoverBeacons[resp].updateReading(input[2], input[8]);
     b.positionUpdated = false;
     b.getPosition();
@@ -147,9 +147,11 @@ RoverBeacon::updatePosition(){
                 offsets.push_back(it->second.offset);
             }
     }
+    
     if(readings.size() > 1){
         position = steepest_descent(readings,offsets,position);
     }
+
 #ifdef DEBUG
     cout << "The position of is " << position.first << "," << position.second << "\n";
 #endif
@@ -163,14 +165,16 @@ RoverBeacon::steepest_descent(const vector<double>& readings,
     const double degree = M_PI / 180;
     pair<double, double> new_pos;
     pair<double, double> pos;
-    double x_deriv, y_deriv;
-    double current_error;
-    double threshold = 0.000001;
+    //double x_deriv, y_deriv;
+    //double current_error;
+    //double threshold = 0.000000001;
     double radius;
-    double sum=0, max_sum = numeric_limits<double>::min();
+    double dist=0, sum=0,min_sum = numeric_limits<double>::max();
     new_pos = old_pos;
-    current_error = numeric_limits<double>::max();
+    //current_error = numeric_limits<double>::max();
 
+
+    /*
     while ( current_error > threshold) {
         old_pos = new_pos;
         x_deriv = calcPartialX(readings, offsets, new_pos);
@@ -183,21 +187,46 @@ RoverBeacon::steepest_descent(const vector<double>& readings,
         //cout << "Error Diff: " << current_error << "\n";
         //cout << "x: " << new_pos.first<< ", y: " << new_pos.second << "\n";
     }
+    */
+    vector< pair<double, double> > points;
+    for( unsigned i =0; i < readings.size();i++){
+        radius = readings[i] ;
+        sum=0;
+        dist=0;
+        min_sum=numeric_limits<double>::max();
+        new_pos=pair<double, double>(0,0);
+        for( double angle = 0; angle < M_PI; angle+= (degree/8.0)){
+            pos.first = cos(angle) * radius + offsets[i].first ;
+            pos.second = sin(angle) * radius;
+            for(unsigned j = 0; j < offsets.size(); j++){
+                if(j == i)
+                    continue;
+                dist = calcDist( pos, offsets[j] ); 
+                sum += fabs(dist - readings[j]);
+            }
+            if(sum < min_sum){
+                min_sum = sum;
+                new_pos = pos;
 
-    radius = calcDist(new_pos, pair<double, double>(0,0)) ;
-    for( double angle = 0; angle < M_PI; angle+= degree){
-        pos.first = cos(angle) * radius;
-        pos.second = sin(angle) * radius;
-        for(pair<double, double >offset : offsets){
-            sum += calcDist( pos, offset ); 
+            }
+            dist = 0;
+            sum = 0;
         }
-        if(sum > max_sum){
-            max_sum = sum;
-            new_pos = pos;
-
-        }
-        sum = 0;
+       points.push_back(new_pos); 
     }
+
+    new_pos=pair<double, double>(0,0);
+
+    for(auto point : points){
+        new_pos.first += point.first;
+        new_pos.second += point.second;
+    }
+
+    new_pos.first /= points.size();
+    new_pos.second /= points.size();
+
+    cout << radius << "\n";
+    
     cout << "x: " << new_pos.first<< ", y: " << new_pos.second << "\n";
     
     return new_pos;
