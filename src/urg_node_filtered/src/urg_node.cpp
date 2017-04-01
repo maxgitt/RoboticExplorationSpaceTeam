@@ -360,10 +360,10 @@ int main(int argc, char **argv)
 
             // Start flag-based pose estimation 
 
-            int smooth_int_window_size = 5; // filter size
+            int smooth_int_window_size = 3; // filter size
             int det_int_edges_window_size = 3; // how many samples on each side to avg to look for an edge
-            int det_int_edges_delta_threshold = 700; // how large of a jump for an edge
-            int find_flag_ends_gap_epsilon = 4; // # of steps between each edge to be a flag segment
+            int det_int_edges_delta_threshold = 1000; // how large of a jump for an edge
+            int find_flag_ends_gap_epsilon = 15; // # of steps between each edge to be a flag segment
             int find_flag_ends_exp_edges = 6; // # of expected edges 
             int num_steps = 1080;
             
@@ -374,12 +374,14 @@ int main(int argc, char **argv)
 
             pose.push_back(get_orientation(pose, flag_ends, msg->ranges));
 
-            pose_pub.publish(publish_pose(pose));
+            if (pose[0] != -99999) {
+              pose_pub.publish(publish_pose(pose));
 
-      	    tf_broadcaster.sendTransform(
-          		tf::StampedTransform(
-            			tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.2, 0.0, 0.0)),
-              			ros::Time::now(),"back_laser_pose", "map"));
+        	    tf_broadcaster.sendTransform(
+            		tf::StampedTransform(
+              			tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.2, 0.0, 0.0)),
+                			ros::Time::now(),"back_laser_pose", "map"));
+            }
 
 	    // End
 		      } else {

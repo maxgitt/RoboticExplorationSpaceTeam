@@ -175,7 +175,7 @@ namespace urg_node
 // Calculate the distance to the center of the flag 
 double get_dist_to_flag_center(vector<double> position);
 
-double get_angle_left_to_center(double dist_to_flag_center, vector<int>& flag_ends, double dist_to_left_flag_end);
+double get_angle_right_to_center(double dist_to_flag_center, vector<int>& flag_ends, double dist_to_right_flag_end);
 
 // Takes the running avg of window size
 // This normalizes/smooths intensity noise

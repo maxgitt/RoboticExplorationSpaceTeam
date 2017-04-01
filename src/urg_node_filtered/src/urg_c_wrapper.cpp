@@ -748,6 +748,7 @@ vector<int> find_flag_ends(vector<int>& edge_indices, int gap_delta, int exp_edg
   if (found_edges != exp_edges) {
 
     flag_ends[0] = (-99999);
+    flag_ends[1] = found_edges;
   }
   else {
     flag_ends[0] = flag_pattern_edges[0];
@@ -767,8 +768,7 @@ vector<double> get_position(vector<int>& flag_ends, vector<float> distance_steps
   NOTE: dL, dR is distance to flag ends relative to rover
         origin is normal unit circle
   */
-  double dist_left_end = distance_steps[flag_ends[0]] / 1000;
-  double dist_right_end = distance_steps[flag_ends[1]] / 1000;
+
   vector<double> coordinates(2);
 
   if (flag_ends[0] == -99999) {
@@ -776,6 +776,9 @@ vector<double> get_position(vector<int>& flag_ends, vector<float> distance_steps
     coordinates[1] = (-99999);
     return coordinates;
   }
+
+  double dist_right_end = distance_steps[flag_ends[0]];
+  double dist_left_end = distance_steps[flag_ends[1]];
 
   /*
   /////////////////////////////////////////////////////////////////////////////
@@ -851,14 +854,14 @@ double get_orientation(vector<double>& position, vector<int>& flag_ends, vector<
     return -99999;
   }
   double angle_increment = 0.25;
-  double angle_to_left = flag_ends[0]*angle_increment;
+  double angle_to_right = flag_ends[0]*angle_increment;
   double dist_to_flag_center = get_dist_to_flag_center(position);
-  double angle_left_to_center = get_angle_left_to_center(dist_to_flag_center, flag_ends, distance_steps[flag_ends[0]] /1000);
+  double angle_right_to_center = get_angle_right_to_center(dist_to_flag_center, flag_ends, distance_steps[flag_ends[0]]);
 
-  // theta_c = theta_l + theta_lc
-  double angle_to_center = angle_to_left + angle_left_to_center;
+  // theta_c = theta_r + theta_rc
+  double angle_to_center = angle_to_right + angle_right_to_center;
   // orientation = theta_c - 135 degrees
-  return angle_to_center - 135;
+  return 135 - angle_to_center;
 
 }
 
@@ -873,7 +876,7 @@ double get_dist_to_flag_center(vector<double> position) {
   return ret_val;
 }
 
-double get_angle_left_to_center(double dist_to_flag_center, vector<int>& flag_ends, double dist_to_left_flag_end) {
+double get_angle_right_to_center(double dist_to_flag_center, vector<int>& flag_ends, double dist_to_right_flag_end) {
 
   double half_sieve_length = .7875;
 
@@ -881,8 +884,8 @@ double get_angle_left_to_center(double dist_to_flag_center, vector<int>& flag_en
   //c: half of flag length (1.575/2) = .7875
   //b: dist_to_flag_center
   //a: dist_to_left_flag_end
-  long double ret_val = acos((pow(dist_to_left_flag_end,2) + pow(dist_to_flag_center,2) - pow(half_sieve_length,2))/ (2*dist_to_flag_center*dist_to_left_flag_end));
-  return ret_val;
+  long double angle_radian = acos((pow(dist_to_right_flag_end,2) + pow(dist_to_flag_center,2) - pow(half_sieve_length,2))/ (2*dist_to_flag_center*dist_to_right_flag_end));
+  return angle_radian*180/M_PI;
 }
 geometry_msgs::PoseWithCovarianceStamped publish_pose(vector<double>& pose_in) {
   geometry_msgs::PoseWithCovarianceStamped pose_out;
