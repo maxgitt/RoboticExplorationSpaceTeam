@@ -44,10 +44,10 @@ class RoverBeacon : public Beacon {
         RoverBeacon(){}
         RoverBeacon(unsigned _id, std::pair<double, double> _offset, double _bias):
             Beacon(_id,_offset, _bias){
-                beaconReadings[34] = sieveBeacon(34,  std::pair<double, double>(-.2,0),0);
-                beaconReadings[33] = sieveBeacon(33, std::pair<double, double>(.2,0),0);
+                beaconReadings[34] = sieveBeacon(34,  std::pair<double, double>(-1,0),0);
+                beaconReadings[33] = sieveBeacon(33, std::pair<double, double>(1,0),0);
                 beaconReadings[26] = sieveBeacon(26, std::pair<double, double>(0,0),0);
-                position = std::pair<double, double>(0.10,0.10);  
+                position = std::pair<double, double>(1,1);  
             }
     std::unordered_map< unsigned, sieveBeacon  > beaconReadings;
 	std::unordered_map< unsigned, sieveBeacon  >::iterator beaconIterator;

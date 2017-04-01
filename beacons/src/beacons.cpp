@@ -2,6 +2,7 @@
 
 #define DEBUG
 #define FULLDEBUG
+
 using std::numeric_limits;
 using std::cout; 
 using std::endl;
@@ -114,6 +115,8 @@ BeaconEnv::getPosition(){
     return position;
 }
 
+double calcDist(pair<double, double> p1, pair<double, double> p2 );
+
 void BeaconEnv::updatePosition(){
     auto it = RoverBeacons.begin();
     auto endIt = RoverBeacons.end();
@@ -157,32 +160,53 @@ pair<double, double>
 RoverBeacon::steepest_descent(const vector<double>& readings, 
         const vector<pair<double,double>>& offsets,
         pair<double, double>  old_pos) {
+    const double degree = M_PI / 180;
     pair<double, double> new_pos;
+    pair<double, double> pos;
     double x_deriv, y_deriv;
-    double current_error, past_error;
-    double error_diff = 10;
-    double threshold = 0.00000005;
-
+    double current_error;
+    double threshold = 0.000001;
+    double radius;
+    double sum=0, max_sum = numeric_limits<double>::min();
     new_pos = old_pos;
     current_error = numeric_limits<double>::max();
-    past_error = numeric_limits<double>::min();
 
-    while ( error_diff > threshold) {
+    while ( current_error > threshold) {
         old_pos = new_pos;
         x_deriv = calcPartialX(readings, offsets, new_pos);
-        cout << "x deriv = " << x_deriv;
+        //cout << "x deriv = " << x_deriv;
         y_deriv = calcPartialY(readings, offsets, new_pos);
-        cout << "    y deriv = " << y_deriv << endl;
-        new_pos.first = new_pos.first - x_deriv * 0.1;
-        new_pos.second = new_pos.second - y_deriv * 0.1;
-        past_error = current_error;
-        current_error = calcoutor(readings, offsets, new_pos);
-        cout <<  "Past Error: " << past_error << "\nCurrent Error: " << current_error << "\n";
-        error_diff = fabs(past_error - current_error);
-        cout << "Error Diff: " << error_diff << "\n";
-        cout << "x: " << new_pos.first<< "y: " << new_pos.second << "\n";
+        //cout << "    y deriv = " << y_deriv << endl;
+        new_pos.first = new_pos.first + x_deriv * 0.1;
+        new_pos.second = new_pos.second + y_deriv * 0.1;
+        current_error = calcDist(old_pos, new_pos);
+        //cout << "Error Diff: " << current_error << "\n";
+        //cout << "x: " << new_pos.first<< ", y: " << new_pos.second << "\n";
     }
+
+    radius = calcDist(new_pos, pair<double, double>(0,0)) ;
+    for( double angle = 0; angle < M_PI; angle+= degree){
+        pos.first = cos(angle) * radius;
+        pos.second = sin(angle) * radius;
+        for(pair<double, double >offset : offsets){
+            sum += calcDist( pos, offset ); 
+        }
+        if(sum > max_sum){
+            max_sum = sum;
+            new_pos = pos;
+
+        }
+        sum = 0;
+    }
+    cout << "x: " << new_pos.first<< ", y: " << new_pos.second << "\n";
+    
     return new_pos;
+}
+
+double calcDist(pair<double, double> p1, pair<double, double> p2 ){
+    double x = p1.first - p2.first;
+    double y = p1.second - p2.second;
+    return sqrt( (x*x) + (y*y)  );
 }
 
 double 
@@ -202,10 +226,12 @@ calcPartialX(const vector<double>& readings,
         const pair<double, double>  guess) {
     double partialX = 0;
     for (unsigned i = 0; i < readings.size(); ++i) {
-        partialX += beaconPartialX(readings.at(i), 
+        double add = beaconPartialX(readings.at(i), 
                 offsets.at(i).first, 
                 offsets.at(i).second,
                 guess);
+        //cout << "Partial X, adding circle: " << i << " with x value:  " << add << "\n";
+        partialX += add;
     }
     return partialX;
 }
@@ -230,13 +256,22 @@ beaconPartialY(double r_1, double h_1, double k_1,
     double diff_x_1, diff_y_1; //edges of triangles
     double dist_1;
     diff_x_1 = guess.first - h_1; //bottom edge of triangle
-    diff_y_1 = guess.second - k_1;   
+    diff_y_1 = guess.second - k_1;
     dist_1 = sqrt(diff_x_1 * diff_x_1 + diff_y_1 * diff_y_1);// py theor
-    double circle1Deriv = diff_y_1/dist_1;
-    if (dist_1 < r_1) {
-        circle1Deriv *= -1;
+    double sin_circ = diff_y_1/dist_1;
+    double y_circ = sin_circ * r_1;
+    if( y_circ == 0 || diff_y_1 == 0){
+        return 0;
     }
-    return circle1Deriv;
+    double ratio = -(diff_y_1 / y_circ);
+    if (dist_1 < r_1) {
+        ratio = 1/ratio;
+        ratio *= -1;
+        ratio -= 1;
+    }else{
+        ratio += 1;
+    }
+    return ratio;
 }
 
 double 
@@ -247,11 +282,21 @@ beaconPartialX(double r_1, double h_1, double k_1,
     diff_x_1 = guess.first - h_1; //bottom edge of triangle
     diff_y_1 = guess.second - k_1;
     dist_1 = sqrt(diff_x_1 * diff_x_1 + diff_y_1 * diff_y_1); //pytheor
-    double circle1Deriv = diff_x_1/dist_1;
+    double cos_circ = diff_x_1/dist_1;
+    double x_circ = cos_circ * r_1;
+    if(x_circ == 0 || cos_circ == 0){
+        return 0;
+    }   
+    double ratio = -(diff_x_1 / x_circ);
     if (dist_1 < r_1) {
-        circle1Deriv *= -1;
+        ratio = 1/ratio;
+        ratio *= -1;
+        ratio -= 1;
+    }else{
+        ratio += 1;
     }
-    return circle1Deriv;
+    return ratio;
+
 }
 
 double 
