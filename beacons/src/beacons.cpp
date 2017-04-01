@@ -139,11 +139,14 @@ RoverBeacon::updatePosition(){
 #ifdef DEBUG
         cout << "        " << "Sieve Beacon " << it->first << ": " << it->second.reading << "\n";
 #endif
-            readings.push_back(it->second.reading);
-            offsets.push_back(it->second.offset);
+            if(it-> second.reading){
+                readings.push_back(it->second.reading);
+                offsets.push_back(it->second.offset);
+            }
     }
-
-    position = steepest_descent(readings,offsets,position);
+    if(readings.size() > 1){
+        position = steepest_descent(readings,offsets,position);
+    }
 #ifdef DEBUG
     cout << "The position of is " << position.first << "," << position.second << "\n";
 #endif
@@ -174,9 +177,10 @@ RoverBeacon::steepest_descent(const vector<double>& readings,
         new_pos.second = new_pos.second - y_deriv * 0.1;
         past_error = current_error;
         current_error = calcoutor(readings, offsets, new_pos);
-        cout <<  "Errors: " << past_error << "     " << current_error << "\n";
-        error_diff = abs(past_error - current_error);    
-        cout << "error diff" << error_diff << "\n";
+        cout <<  "Past Error: " << past_error << "\nCurrent Error: " << current_error << "\n";
+        error_diff = fabs(past_error - current_error);
+        cout << "Error Diff: " << error_diff << "\n";
+        cout << "x: " << new_pos.first<< "y: " << new_pos.second << "\n";
     }
     return new_pos;
 }
